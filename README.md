@@ -40,6 +40,13 @@ bun run db:generate
 # Open Drizzle Studio
 bun run db:studio
 
+# Run type/Svelte checks and tests
+bun run check
+bun run test
+
+# Run tests in watch mode
+bun run test:watch
+
 # Build for production
 bun run build
 
