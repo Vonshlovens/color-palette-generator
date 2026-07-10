@@ -10,7 +10,7 @@ if [ -z "${TURSO_AUTH_TOKEN:-}" ]; then
 fi
 
 case "$database_url" in
-  file:*)
+  file:/*)
     database_path=${database_url#file:}
     database_path=${database_path%%\?*}
     database_path=${database_path%%\#*}
@@ -31,6 +31,10 @@ case "$database_url" in
     esac
 
     mkdir -p "$database_directory"
+    ;;
+  file:*)
+    echo "Production file database URLs must use an absolute path under a persistent mount (for example file:/data/local.db)" >&2
+    exit 1
     ;;
 esac
 

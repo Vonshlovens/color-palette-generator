@@ -83,7 +83,12 @@ docker compose start app
 
 The entrypoint creates the local database directory, invokes the committed migrations once per
 start (already-applied migrations are skipped by Drizzle), and then starts the Bun server as a
-non-root user. A failed migration prevents the application from starting.
+non-root user. A failed migration prevents the application from starting. In production, `file:`
+database URLs must contain an absolute path; use `file:/data/local.db` for the mounted volume.
+
+Automatic entrypoint migrations assume that only one replica is starting. For a multi-replica
+deployment, run `bun run /app/scripts/migrate.ts` from the release image as a one-off deployment
+step, wait for it to succeed, and only then start or scale the application replicas.
 
 ### Remote Turso
 
@@ -112,6 +117,9 @@ If dynamic forwarded host/protocol handling is required, set `ORIGIN=` plus
 `PROTOCOL_HEADER=x-forwarded-proto` and `HOST_HEADER=x-forwarded-host`. Set
 `ADDRESS_HEADER=x-forwarded-for` only when client IPs are needed, with `XFF_DEPTH` equal to the exact
 number of trusted proxies. Never trust these headers while the app port is directly client-accessible.
+Because `POST /api/palettes` is public and creates persistent records, configure request rate limits
+and reasonable body-size limits for that route at the trusted reverse proxy to prevent storage and
+request-flood abuse.
 
 Docker and Compose health checks call `/health` with Bun itself; the endpoint verifies both the app
 and database and returns HTTP 503 when the database is unavailable. Inspect status with

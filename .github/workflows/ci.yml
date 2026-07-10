@@ -35,3 +35,6 @@ jobs:
 
       - name: Build production app
         run: bun run build
+
+      - name: Build production container
+        run: docker build --tag palette-studio:ci .

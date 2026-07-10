@@ -1,10 +1,27 @@
 <script lang="ts">
-  import { paletteStore } from '$lib/stores/palette.svelte';
+  import {
+    getPaletteStoreContext,
+    setPaletteStoreContext
+  } from '$lib/stores/palette.svelte';
   import { getHarmonyDescription, getHarmonyName } from '$lib/color/harmonies';
+  import type { PaletteSnapshot } from '$lib/types';
   import * as Card from '$lib/components/ui/card';
   import ColorPicker from './ColorPicker.svelte';
   import HarmonySelector from './HarmonySelector.svelte';
   import PaletteDisplay from './PaletteDisplay.svelte';
+
+  interface Props {
+    initialSnapshot?: PaletteSnapshot;
+  }
+
+  let { initialSnapshot }: Props = $props();
+
+  function initializePaletteStore(): void {
+    setPaletteStoreContext(initialSnapshot);
+  }
+
+  initializePaletteStore();
+  const paletteStore = getPaletteStoreContext();
 </script>
 
 <section

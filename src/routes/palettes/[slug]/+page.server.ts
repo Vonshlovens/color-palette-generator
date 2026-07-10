@@ -1,4 +1,5 @@
 import { error } from '@sveltejs/kit';
+import type { PaletteRecord } from '$lib/server/db';
 import { getPaletteBySlug } from '$lib/server/palettes/queries';
 import { toSavedPalette } from '$lib/server/palettes/mapping';
 import { paletteSlugSchema } from '$lib/server/palettes/validation';
@@ -9,7 +10,13 @@ export const load: PageServerLoad = async ({ params }) => {
     error(404, 'Palette not found');
   }
 
-  const record = await getPaletteBySlug(params.slug);
+  let record: PaletteRecord | undefined;
+  try {
+    record = await getPaletteBySlug(params.slug);
+  } catch (cause) {
+    console.error('Failed to load saved palette', { slug: params.slug, cause });
+    error(503, 'Palette service is temporarily unavailable');
+  }
 
   if (!record) {
     error(404, 'Palette not found');

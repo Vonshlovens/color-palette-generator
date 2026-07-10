@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { paletteStore } from '$lib/stores/palette.svelte';
+  import { getPaletteStoreContext } from '$lib/stores/palette.svelte';
   import { Button } from '$lib/components/ui/button';
   import * as Card from '$lib/components/ui/card';
   import * as Dialog from '$lib/components/ui/dialog';
@@ -11,6 +11,7 @@
   import CodeXml from '@lucide/svelte/icons/code-xml';
   import Copy from '@lucide/svelte/icons/copy';
 
+  const paletteStore = getPaletteStoreContext();
   let allCopied = $state(false);
 
   async function copyAllHex() {

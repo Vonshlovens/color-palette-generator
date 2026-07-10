@@ -8,6 +8,7 @@ import {
 } from '$lib/types';
 import { createColor } from '$lib/color/conversions';
 import { generatePalette } from '$lib/color/harmonies';
+import { getContext, hasContext, setContext } from 'svelte';
 
 const DEFAULT_STATE: PaletteState = {
   hue: 220,
@@ -16,8 +17,14 @@ const DEFAULT_STATE: PaletteState = {
   harmony: 'complementary'
 };
 
-class PaletteStore {
+const PALETTE_STORE_CONTEXT = Symbol('palette-store');
+
+export class PaletteStore {
   #state = $state<PaletteState>({ ...DEFAULT_STATE });
+
+  constructor(snapshot?: PaletteSnapshot) {
+    if (snapshot) this.hydrate(snapshot);
+  }
 
   get hue(): number {
     return this.#state.hue;
@@ -109,4 +116,18 @@ class PaletteStore {
   }
 }
 
-export const paletteStore = new PaletteStore();
+export function createPaletteStore(snapshot?: PaletteSnapshot): PaletteStore {
+  return new PaletteStore(snapshot);
+}
+
+export function setPaletteStoreContext(snapshot?: PaletteSnapshot): void {
+  setContext(PALETTE_STORE_CONTEXT, createPaletteStore(snapshot));
+}
+
+export function getPaletteStoreContext(): PaletteStore {
+  if (!hasContext(PALETTE_STORE_CONTEXT)) {
+    throw new Error('Palette store context is only available inside PaletteWorkspace');
+  }
+
+  return getContext<PaletteStore>(PALETTE_STORE_CONTEXT);
+}

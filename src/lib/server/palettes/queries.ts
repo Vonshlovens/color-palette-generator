@@ -32,7 +32,7 @@ export async function createPalette(
         createdAt: now,
         updatedAt: now
       })
-      .onConflictDoNothing()
+      .onConflictDoNothing({ target: palettes.slug })
       .returning();
 
     if (created) return created;

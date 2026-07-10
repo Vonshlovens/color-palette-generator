@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { paletteStore } from '$lib/stores/palette.svelte';
+  import { getPaletteStoreContext } from '$lib/stores/palette.svelte';
   import { hexToHsl } from '$lib/color/conversions';
   import { Button } from '$lib/components/ui/button';
   import * as Card from '$lib/components/ui/card';
@@ -7,6 +7,7 @@
   import { Label } from '$lib/components/ui/label';
   import RefreshCw from '@lucide/svelte/icons/refresh-cw';
 
+  const paletteStore = getPaletteStoreContext();
   let hexInput = $state(paletteStore.baseColor.hex);
   let hexError = $state(false);
 

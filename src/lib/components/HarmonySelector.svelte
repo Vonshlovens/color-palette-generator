@@ -1,6 +1,6 @@
 <script lang="ts">
   import type { HarmonyType } from '$lib/types';
-  import { paletteStore } from '$lib/stores/palette.svelte';
+  import { getPaletteStoreContext } from '$lib/stores/palette.svelte';
   import { getHarmonyName, getHarmonyDescription } from '$lib/color/harmonies';
   import { Button } from '$lib/components/ui/button';
   import * as Card from '$lib/components/ui/card';
@@ -12,6 +12,7 @@
   import Split from '@lucide/svelte/icons/split';
   import Triangle from '@lucide/svelte/icons/triangle';
 
+  const paletteStore = getPaletteStoreContext();
   const harmonies = [
     { type: 'complementary', icon: CircleDot },
     { type: 'analogous', icon: Orbit },

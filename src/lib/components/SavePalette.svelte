@@ -1,6 +1,6 @@
 <script lang="ts">
   import { goto } from '$app/navigation';
-  import { paletteStore } from '$lib/stores/palette.svelte';
+  import { getPaletteStoreContext } from '$lib/stores/palette.svelte';
   import { getHarmonyName } from '$lib/color/harmonies';
   import { Button } from '$lib/components/ui/button';
   import * as Dialog from '$lib/components/ui/dialog';
@@ -9,6 +9,7 @@
   import LoaderCircle from '@lucide/svelte/icons/loader-circle';
   import Save from '@lucide/svelte/icons/save';
 
+  const paletteStore = getPaletteStoreContext();
   let open = $state(false);
   let wasOpen = false;
   let name = $state('');

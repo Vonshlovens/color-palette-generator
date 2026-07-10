@@ -1,21 +1,10 @@
 <script lang="ts">
   import { PaletteWorkspace, ThemeControl } from '$lib/components';
   import { Badge } from '$lib/components/ui/badge';
-  import { paletteStore } from '$lib/stores/palette.svelte';
   import Palette from '@lucide/svelte/icons/palette';
   import type { PageProps } from './$types';
 
   let { data }: PageProps = $props();
-  let ready = $state(false);
-
-  $effect(() => {
-    ready = paletteStore.hydrate({
-      hue: data.palette.hue,
-      saturation: data.palette.saturation,
-      lightness: data.palette.lightness,
-      harmony: data.palette.harmony
-    });
-  });
 </script>
 
 <svelte:head>
@@ -50,17 +39,13 @@
       </p>
     </div>
 
-    {#if ready}
-      <PaletteWorkspace />
-    {:else}
-      <div class="border-border bg-card text-muted-foreground rounded-xl border p-8 text-sm">
-        Loading palette workspace…
-      </div>
-    {/if}
+    {#key data.palette.slug}
+      <PaletteWorkspace initialSnapshot={data.palette} />
+    {/key}
   </main>
 
   <footer class="text-muted-foreground border-t px-4 py-6 text-center text-xs">
-    Saved {new Date(data.palette.createdAt).toLocaleDateString()} · Select any swatch to copy its HEX
-    value.
+    Saved <time datetime={data.palette.createdAt}>{data.palette.createdAt.slice(0, 10)} UTC</time> ·
+    Select any swatch to copy its HEX value.
   </footer>
 </div>
