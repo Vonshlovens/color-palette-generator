@@ -1,0 +1,13 @@
+.git
+.gitignore
+.env
+.env.*
+.svelte-kit
+build
+node_modules
+coverage
+local.db
+local.db-*
+*.sqlite
+*.sqlite-*
+data

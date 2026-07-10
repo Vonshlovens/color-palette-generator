@@ -1,0 +1,133 @@
+{
+  "version": "6",
+  "dialect": "sqlite",
+  "id": "9742b349-bbcf-45f9-b31a-7e87960360aa",
+  "prevId": "00000000-0000-0000-0000-000000000000",
+  "tables": {
+    "palettes": {
+      "name": "palettes",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "slug": {
+          "name": "slug",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "hue": {
+          "name": "hue",
+          "type": "real",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "saturation": {
+          "name": "saturation",
+          "type": "real",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "lightness": {
+          "name": "lightness",
+          "type": "real",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "harmony": {
+          "name": "harmony",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "(unixepoch() * 1000)"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "(unixepoch() * 1000)"
+        }
+      },
+      "indexes": {
+        "palettes_slug_unique": {
+          "name": "palettes_slug_unique",
+          "columns": [
+            "slug"
+          ],
+          "isUnique": true
+        },
+        "palettes_created_at_idx": {
+          "name": "palettes_created_at_idx",
+          "columns": [
+            "created_at"
+          ],
+          "isUnique": false
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {
+        "palettes_slug_length_check": {
+          "name": "palettes_slug_length_check",
+          "value": "length(\"palettes\".\"slug\") between 8 and 32"
+        },
+        "palettes_name_length_check": {
+          "name": "palettes_name_length_check",
+          "value": "length(trim(\"palettes\".\"name\")) between 1 and 80"
+        },
+        "palettes_hue_check": {
+          "name": "palettes_hue_check",
+          "value": "\"palettes\".\"hue\" between 0 and 360"
+        },
+        "palettes_saturation_check": {
+          "name": "palettes_saturation_check",
+          "value": "\"palettes\".\"saturation\" between 0 and 100"
+        },
+        "palettes_lightness_check": {
+          "name": "palettes_lightness_check",
+          "value": "\"palettes\".\"lightness\" between 0 and 100"
+        },
+        "palettes_harmony_check": {
+          "name": "palettes_harmony_check",
+          "value": "\"palettes\".\"harmony\" in ('complementary', 'analogous', 'triadic', 'split-complementary', 'tetradic', 'monochromatic')"
+        }
+      }
+    }
+  },
+  "views": {},
+  "enums": {},
+  "_meta": {
+    "schemas": {},
+    "tables": {},
+    "columns": {}
+  },
+  "internal": {
+    "indexes": {}
+  }
+}

@@ -1,0 +1,35 @@
+services:
+  app:
+    build:
+      context: .
+    environment:
+      HOST: 0.0.0.0
+      PORT: "3000"
+      ORIGIN: "${ORIGIN-http://localhost:3000}"
+      TURSO_DATABASE_URL: "${TURSO_DATABASE_URL:-file:/data/local.db}"
+      TURSO_AUTH_TOKEN: "${TURSO_AUTH_TOKEN:-}"
+      PROTOCOL_HEADER: "${PROTOCOL_HEADER:-}"
+      HOST_HEADER: "${HOST_HEADER:-host}"
+      ADDRESS_HEADER: "${ADDRESS_HEADER:-}"
+      XFF_DEPTH: "${XFF_DEPTH:-1}"
+    ports:
+      - "${APP_BIND_ADDRESS:-127.0.0.1}:${APP_PORT:-3000}:3000"
+    volumes:
+      - palette-data:/data
+    restart: unless-stopped
+    init: true
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "bun",
+          "-e",
+          "const response = await fetch('http://127.0.0.1:' + (process.env.PORT || '3000') + '/health', { signal: AbortSignal.timeout(4000) }); if (!response.ok) process.exit(1)"
+        ]
+      interval: 30s
+      timeout: 5s
+      start_period: 10s
+      retries: 3
+
+volumes:
+  palette-data:

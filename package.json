@@ -2,24 +2,44 @@
   "name": "color-palette-generator",
   "version": "0.0.1",
   "type": "module",
+  "packageManager": "bun@1.3.14",
   "scripts": {
     "dev": "vite dev",
     "build": "vite build",
+    "start": "bun build/index.js",
     "preview": "vite preview",
-    "check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json"
+    "check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "bun run scripts/migrate.ts",
+    "db:studio": "drizzle-kit studio"
   },
   "devDependencies": {
-    "@sveltejs/adapter-auto": "^6.0.0",
+    "@fontsource-variable/inter": "^5.2.8",
+    "@internationalized/date": "^3.12.0",
+    "@lucide/svelte": "^1.24.0",
     "@sveltejs/kit": "^2.50.1",
     "@sveltejs/vite-plugin-svelte": "^5.0.0",
+    "bits-ui": "^2.16.3",
+    "clsx": "^2.1.1",
+    "drizzle-kit": "^0.31.10",
+    "shadcn-svelte": "^1.4.1",
     "svelte": "^5.48.2",
     "svelte-adapter-bun": "^0.5.2",
     "svelte-check": "^4.0.0",
+    "tailwind-merge": "^3.5.0",
+    "tailwind-variants": "^3.2.2",
+    "tw-animate-css": "^1.4.0",
     "typescript": "~5.9.3",
-    "vite": "^7.3.1"
+    "vite": "^7.3.1",
+    "vitest": "^4.1.10"
   },
   "dependencies": {
+    "@libsql/client": "^0.17.4",
     "@tailwindcss/vite": "^4.1.18",
-    "tailwindcss": "^4.1.18"
+    "drizzle-orm": "^0.45.2",
+    "tailwindcss": "^4.1.18",
+    "zod": "^4.4.3"
   }
 }

@@ -31,9 +31,19 @@ Select Base Color → Choose Harmony Type → Generate Palette → Export/Copy
   Color Picker        Dropdown/Tabs         Live Preview    HEX/RGB/CSS
 ```
 
-## Out of Scope (v1)
+## Saved Palettes (v2)
+
+- A user can name and save the current generator state as an immutable public snapshot.
+- A snapshot stores only canonical HSL values, harmony type, name, slug, and timestamps.
+- Generated RGB/HEX arrays are recalculated from the canonical inputs and are never persisted.
+- Shared routes hydrate the browser palette workspace and can be edited locally, then saved as a
+  new snapshot. Existing snapshots are never updated or deleted.
+- No account or ownership model is implied; share links are public.
+
+## Out of Scope
 - Gradient generation
 - Image color extraction
-- Palette saving/persistence
 - Color blindness simulation
 - Custom harmony angle adjustments
+- Updating or deleting saved snapshots
+- Authentication and private palettes
