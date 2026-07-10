@@ -47,9 +47,68 @@ bun run build
 bun run preview
 ```
 
-`TURSO_DATABASE_URL` defaults to `file:local.db`. Set it to a remote libSQL URL in production and
-provide `TURSO_AUTH_TOKEN`; the token is read only by server-side modules and migration tooling.
-Run `bun run db:migrate` before starting each deployed application version.
+`TURSO_DATABASE_URL` defaults to `file:local.db`. An empty `TURSO_AUTH_TOKEN` is treated as absent.
+Set both values for a remote libSQL database. `bun run db:migrate` applies the committed,
+Drizzle-tracked migrations and can be run from any working directory.
+
+## Docker self-hosting
+
+The zero-configuration deployment uses local file libSQL on a named volume:
+
+```bash
+docker compose up --build -d
+docker compose ps
+curl --fail http://localhost:3000/health
+```
+
+The app is exposed on `127.0.0.1:3000` by default. Set `APP_PORT` to change the host port and update
+`ORIGIN` to its externally visible URL. Set `APP_BIND_ADDRESS=0.0.0.0` only when direct network
+access is intentional. The container always listens on port 3000.
+
+Compose stores the database at `/data/local.db` in the `palette-data` named volume. Keep this
+volume when replacing containers. For a consistent local backup, stop writes before copying:
+
+```bash
+docker compose stop app
+docker compose cp app:/data/local.db ./local.db.backup
+docker compose start app
+```
+
+The entrypoint creates the local database directory, invokes the committed migrations once per
+start (already-applied migrations are skipped by Drizzle), and then starts the Bun server as a
+non-root user. A failed migration prevents the application from starting.
+
+### Remote Turso
+
+For managed production storage, create a local `.env` file for Compose and restrict its
+permissions. `.env` files are ignored by Git and the Docker build context:
+
+```dotenv
+TURSO_DATABASE_URL=libsql://your-database.turso.io
+TURSO_AUTH_TOKEN=your-token
+ORIGIN=https://palettes.example.com
+```
+
+```bash
+chmod 600 .env
+docker compose up --build -d
+```
+
+The local volume remains mounted but is unused while `TURSO_DATABASE_URL` is remote. Use Turso's
+backup facilities for remote databases.
+
+### Reverse proxy
+
+Prefer a fixed HTTPS `ORIGIN` and keep the default loopback bind when the proxy runs on the Docker
+host. A proxy on another host requires an intentionally restricted `APP_BIND_ADDRESS` and firewall.
+If dynamic forwarded host/protocol handling is required, set `ORIGIN=` plus
+`PROTOCOL_HEADER=x-forwarded-proto` and `HOST_HEADER=x-forwarded-host`. Set
+`ADDRESS_HEADER=x-forwarded-for` only when client IPs are needed, with `XFF_DEPTH` equal to the exact
+number of trusted proxies. Never trust these headers while the app port is directly client-accessible.
+
+Docker and Compose health checks call `/health` with Bun itself; the endpoint verifies both the app
+and database and returns HTTP 503 when the database is unavailable. Inspect status with
+`docker compose ps` and logs with `docker compose logs app`.
 
 Saved snapshots persist only their name, HSL generator inputs, harmony type, public slug, and
 timestamps. Generated HEX/RGB colors are always derived at runtime. The public API is:
