@@ -135,15 +135,25 @@ export function clamp(value: number, min: number, max: number): number {
 export function getLuminance(rgb: RGB): number {
   const [r, g, b] = [rgb.r, rgb.g, rgb.b].map((v) => {
     v /= 255;
-    return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4);
+    return v <= 0.04045 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4);
   });
   return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+}
+
+/**
+ * Calculate the WCAG contrast ratio between two sRGB colors.
+ */
+export function getContrastRatio(foreground: RGB, background: RGB): number {
+  const lighter = Math.max(getLuminance(foreground), getLuminance(background));
+  const darker = Math.min(getLuminance(foreground), getLuminance(background));
+  return (lighter + 0.05) / (darker + 0.05);
 }
 
 /**
  * Determine if text should be light or dark on a given background
  */
 export function getContrastTextColor(rgb: RGB): 'light' | 'dark' {
-  const luminance = getLuminance(rgb);
-  return luminance > 0.179 ? 'dark' : 'light';
+  const black = { r: 0, g: 0, b: 0 };
+  const white = { r: 255, g: 255, b: 255 };
+  return getContrastRatio(rgb, black) >= getContrastRatio(rgb, white) ? 'dark' : 'light';
 }

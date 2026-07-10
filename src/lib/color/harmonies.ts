@@ -112,7 +112,7 @@ function generateMonochromatic(base: HSL): Color[] {
   return [
     createColor({ h, s: 90, l: 25 }),
     createColor({ h, s: 85, l: 40 }),
-    createColor({ h, s: 80, l: 50 }),
+    createColor({ h, s: 100, l: 50 }),
     createColor({ h, s: 70, l: 65 }),
     createColor({ h, s: 50, l: 80 })
   ];

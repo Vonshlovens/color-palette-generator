@@ -1,6 +1,11 @@
 <script lang="ts">
   import { paletteStore } from '$lib/stores/palette.svelte';
   import { hexToHsl } from '$lib/color/conversions';
+  import { Button } from '$lib/components/ui/button';
+  import * as Card from '$lib/components/ui/card';
+  import { Input } from '$lib/components/ui/input';
+  import { Label } from '$lib/components/ui/label';
+  import RefreshCw from '@lucide/svelte/icons/refresh-cw';
 
   let hexInput = $state(paletteStore.baseColor.hex);
   let hexError = $state(false);
@@ -32,36 +37,51 @@
   });
 </script>
 
-<div class="color-picker">
-  <div class="preview-section">
+<Card.Root>
+  <Card.Header class="border-b">
+    <Card.Title>Base color</Card.Title>
+    <Card.Description>Adjust the HSL channels or enter a HEX value.</Card.Description>
+  </Card.Header>
+
+  <Card.Content class="space-y-6">
+    <div class="flex items-center gap-4">
     <div
-      class="color-preview"
+        class="size-20 shrink-0 rounded-xl border shadow-sm transition-colors sm:size-24"
       style="background-color: {paletteStore.baseColor.hex}"
-    ></div>
-    <div class="hex-input-wrapper">
-      <input
+        role="img"
+        aria-label="Selected color preview: {paletteStore.baseColor.hex}"
+      ></div>
+      <div class="min-w-0 flex-1 space-y-2">
+        <Label for="base-color-hex">HEX value</Label>
+        <Input
+          id="base-color-hex"
         type="text"
         value={hexInput}
         oninput={handleHexChange}
-        class="hex-input"
-        class:error={hexError}
-        maxlength="7"
-        spellcheck="false"
+          class={`font-mono uppercase ${hexError ? 'border-destructive' : ''}`}
+          maxlength={7}
+          spellcheck="false"
+          aria-invalid={hexError}
+          aria-describedby={hexError ? 'hex-error' : undefined}
       />
+        {#if hexError}
+          <p id="hex-error" class="text-destructive text-xs">Enter a six-digit HEX value.</p>
+        {/if}
     </div>
   </div>
 
-  <div class="sliders">
-    <div class="slider-group">
-      <label>
-        <span class="slider-label">H</span>
+    <div class="space-y-5">
+      <div class="grid grid-cols-[1.5rem_1fr_3rem] items-center gap-3">
+        <Label for="hue" class="text-muted-foreground">H</Label>
         <input
+          id="hue"
           type="range"
           min="0"
           max="360"
           value={paletteStore.hue}
           oninput={(e) => paletteStore.setHue(Number((e.target as HTMLInputElement).value))}
-          class="hue-slider"
+          aria-label="Hue"
+          class="w-full"
           style="background: linear-gradient(to right,
             hsl(0, 70%, 50%),
             hsl(60, 70%, 50%),
@@ -71,144 +91,56 @@
             hsl(300, 70%, 50%),
             hsl(360, 70%, 50%))"
         />
-        <span class="slider-value">{paletteStore.hue}°</span>
-      </label>
+        <output for="hue" class="text-muted-foreground text-right font-mono text-xs">
+          {paletteStore.hue}°
+        </output>
     </div>
 
-    <div class="slider-group">
-      <label>
-        <span class="slider-label">S</span>
+      <div class="grid grid-cols-[1.5rem_1fr_3rem] items-center gap-3">
+        <Label for="saturation" class="text-muted-foreground">S</Label>
         <input
+          id="saturation"
           type="range"
           min="0"
           max="100"
           value={paletteStore.saturation}
           oninput={(e) => paletteStore.setSaturation(Number((e.target as HTMLInputElement).value))}
+          aria-label="Saturation"
+          class="w-full"
           style="background: linear-gradient(to right,
             hsl({paletteStore.hue}, 0%, {paletteStore.lightness}%),
             hsl({paletteStore.hue}, 100%, {paletteStore.lightness}%))"
         />
-        <span class="slider-value">{paletteStore.saturation}%</span>
-      </label>
+        <output for="saturation" class="text-muted-foreground text-right font-mono text-xs">
+          {paletteStore.saturation}%
+        </output>
     </div>
 
-    <div class="slider-group">
-      <label>
-        <span class="slider-label">L</span>
+      <div class="grid grid-cols-[1.5rem_1fr_3rem] items-center gap-3">
+        <Label for="lightness" class="text-muted-foreground">L</Label>
         <input
+          id="lightness"
           type="range"
           min="0"
           max="100"
           value={paletteStore.lightness}
           oninput={(e) => paletteStore.setLightness(Number((e.target as HTMLInputElement).value))}
+          aria-label="Lightness"
+          class="w-full"
           style="background: linear-gradient(to right,
             hsl({paletteStore.hue}, {paletteStore.saturation}%, 0%),
             hsl({paletteStore.hue}, {paletteStore.saturation}%, 50%),
             hsl({paletteStore.hue}, {paletteStore.saturation}%, 100%))"
         />
-        <span class="slider-value">{paletteStore.lightness}%</span>
-      </label>
+        <output for="lightness" class="text-muted-foreground text-right font-mono text-xs">
+          {paletteStore.lightness}%
+        </output>
+      </div>
     </div>
-  </div>
 
-  <button class="randomize-btn" onclick={() => paletteStore.randomize()}>
-    Randomize
-  </button>
-</div>
-
-<style>
-  .color-picker {
-    background: var(--bg-surface);
-    border-radius: 12px;
-    padding: 20px;
-    display: flex;
-    flex-direction: column;
-    gap: 20px;
-  }
-
-  .preview-section {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 12px;
-  }
-
-  .color-preview {
-    width: 120px;
-    height: 120px;
-    border-radius: 12px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-    transition: background-color 0.15s ease;
-  }
-
-  .hex-input-wrapper {
-    width: 100%;
-  }
-
-  .hex-input {
-    width: 100%;
-    background: var(--bg-elevated);
-    border: 1px solid var(--border-color);
-    border-radius: 6px;
-    padding: 8px 12px;
-    color: var(--text-primary);
-    font-family: monospace;
-    font-size: 16px;
-    text-align: center;
-    text-transform: uppercase;
-  }
-
-  .hex-input:focus {
-    outline: none;
-    border-color: #3b82f6;
-  }
-
-  .hex-input.error {
-    border-color: #ef4444;
-  }
-
-  .sliders {
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
-  }
-
-  .slider-group label {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-  }
-
-  .slider-label {
-    width: 16px;
-    font-weight: 600;
-    color: var(--text-secondary);
-  }
-
-  .slider-group input[type="range"] {
-    flex: 1;
-  }
-
-  .slider-value {
-    width: 48px;
-    text-align: right;
-    font-family: monospace;
-    font-size: 14px;
-    color: var(--text-secondary);
-  }
-
-  .randomize-btn {
-    background: var(--bg-elevated);
-    border: 1px solid var(--border-color);
-    border-radius: 6px;
-    padding: 10px 16px;
-    color: var(--text-primary);
-    font-size: 14px;
-    cursor: pointer;
-    transition: all 0.15s ease;
-  }
-
-  .randomize-btn:hover {
-    background: var(--border-color);
-  }
-</style>
+    <Button variant="outline" class="w-full" onclick={() => paletteStore.randomize()}>
+      <RefreshCw data-icon="inline-start" />
+      Randomize color
+    </Button>
+  </Card.Content>
+</Card.Root>

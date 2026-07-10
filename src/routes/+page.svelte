@@ -1,144 +1,52 @@
 <script lang="ts">
-  import { ColorPicker, HarmonySelector, PaletteDisplay } from '$lib/components';
-  import { paletteStore } from '$lib/stores/palette.svelte';
-  import { getHarmonyName } from '$lib/color/harmonies';
+  import { PaletteWorkspace, ThemeControl } from '$lib/components';
+  import { Badge } from '$lib/components/ui/badge';
+  import Palette from '@lucide/svelte/icons/palette';
 </script>
 
 <svelte:head>
   <title>Color Palette Generator</title>
-  <meta name="description" content="Generate harmonious color palettes using color theory" />
+  <meta
+    name="description"
+    content="Create accessible, harmonious color palettes using color theory."
+  />
 </svelte:head>
 
-<div class="app">
-  <header>
-    <h1>Color Palette Generator</h1>
-    <p class="subtitle">Create harmonious palettes using color theory</p>
+<div class="min-h-screen">
+  <header class="border-b bg-background/90 sticky top-0 z-40 backdrop-blur">
+    <div class="mx-auto flex h-16 max-w-7xl items-center justify-between gap-4 px-4 sm:px-6">
+      <div class="flex min-w-0 items-center gap-3">
+        <span
+          class="bg-primary text-primary-foreground flex size-9 shrink-0 items-center justify-center rounded-xl"
+        >
+          <Palette class="size-5" aria-hidden="true" />
+        </span>
+        <div class="min-w-0">
+          <p class="truncate text-sm font-semibold sm:text-base">Palette Studio</p>
+          <p class="text-muted-foreground hidden text-xs sm:block">Color harmony workspace</p>
+        </div>
+      </div>
+      <ThemeControl />
+    </div>
   </header>
 
-  <main>
-    <div class="controls">
-      <ColorPicker />
-      <HarmonySelector />
-    </div>
-
-    <div class="output">
-      <PaletteDisplay />
-
-      <div class="info-panel">
-        <h3>About {getHarmonyName(paletteStore.harmony)}</h3>
-        {#if paletteStore.harmony === 'complementary'}
-          <p>Complementary colors sit opposite each other on the color wheel. This creates high contrast and visual tension, making it great for creating impact.</p>
-        {:else if paletteStore.harmony === 'analogous'}
-          <p>Analogous colors are neighbors on the color wheel. They create harmonious, cohesive designs that are pleasing to the eye and often found in nature.</p>
-        {:else if paletteStore.harmony === 'triadic'}
-          <p>Triadic colors are evenly spaced around the color wheel (120° apart). This creates vibrant palettes with strong visual contrast while maintaining balance.</p>
-        {:else if paletteStore.harmony === 'split-complementary'}
-          <p>Split-complementary uses a base color plus the two colors adjacent to its complement. It offers contrast similar to complementary but with less tension.</p>
-        {:else if paletteStore.harmony === 'tetradic'}
-          <p>Tetradic (or rectangular) harmony uses four colors arranged in two complementary pairs. It offers rich color variety but requires careful balance.</p>
-        {:else if paletteStore.harmony === 'monochromatic'}
-          <p>Monochromatic palettes use a single hue with variations in saturation and lightness. They create cohesive, elegant designs with subtle depth.</p>
-        {/if}
+  <main class="mx-auto max-w-7xl px-4 py-8 sm:px-6 sm:py-12">
+    <div class="mb-8 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+      <div class="max-w-2xl">
+        <Badge variant="outline" class="mb-3">HSL-powered</Badge>
+        <h1 class="text-2xl font-semibold tracking-tight sm:text-3xl">Build a balanced color system</h1>
+        <p class="text-muted-foreground mt-2 text-sm leading-relaxed sm:text-base">
+          Choose a base color, explore proven harmony rules, and export an accessible five-color
+          palette.
+        </p>
       </div>
+      <p class="text-muted-foreground text-xs">All color calculations stay in your browser.</p>
     </div>
+
+    <PaletteWorkspace />
   </main>
 
-  <footer>
-    <p>Click any color swatch to copy its HEX value</p>
+  <footer class="text-muted-foreground border-t px-4 py-6 text-center text-xs">
+    Select any color swatch to copy its HEX value.
   </footer>
 </div>
-
-<style>
-  .app {
-    min-height: 100vh;
-    max-width: 1200px;
-    margin: 0 auto;
-    padding: 40px 24px;
-    display: flex;
-    flex-direction: column;
-  }
-
-  header {
-    text-align: center;
-    margin-bottom: 40px;
-  }
-
-  h1 {
-    margin: 0;
-    font-size: 32px;
-    font-weight: 700;
-    background: linear-gradient(135deg, #3b82f6, #8b5cf6, #ec4899);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-  }
-
-  .subtitle {
-    margin: 8px 0 0;
-    color: var(--text-secondary);
-    font-size: 16px;
-  }
-
-  main {
-    flex: 1;
-    display: grid;
-    grid-template-columns: 320px 1fr;
-    gap: 24px;
-  }
-
-  .controls {
-    display: flex;
-    flex-direction: column;
-    gap: 20px;
-  }
-
-  .output {
-    display: flex;
-    flex-direction: column;
-    gap: 20px;
-  }
-
-  .info-panel {
-    background: var(--bg-surface);
-    border-radius: 12px;
-    padding: 20px;
-  }
-
-  .info-panel h3 {
-    margin: 0 0 12px;
-    font-size: 16px;
-    font-weight: 600;
-  }
-
-  .info-panel p {
-    margin: 0;
-    color: var(--text-secondary);
-    font-size: 14px;
-    line-height: 1.6;
-  }
-
-  footer {
-    margin-top: 40px;
-    text-align: center;
-  }
-
-  footer p {
-    margin: 0;
-    color: var(--text-secondary);
-    font-size: 13px;
-  }
-
-  @media (max-width: 768px) {
-    main {
-      grid-template-columns: 1fr;
-    }
-
-    .controls {
-      order: 2;
-    }
-
-    .output {
-      order: 1;
-    }
-  }
-</style>

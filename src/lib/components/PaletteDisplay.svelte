@@ -1,202 +1,73 @@
 <script lang="ts">
   import { paletteStore } from '$lib/stores/palette.svelte';
+  import { Button } from '$lib/components/ui/button';
+  import * as Card from '$lib/components/ui/card';
+  import * as Dialog from '$lib/components/ui/dialog';
+  import * as Tooltip from '$lib/components/ui/tooltip';
   import ColorSwatch from './ColorSwatch.svelte';
+  import ExportPanel from './ExportPanel.svelte';
+  import Check from '@lucide/svelte/icons/check';
+  import CodeXml from '@lucide/svelte/icons/code-xml';
+  import Copy from '@lucide/svelte/icons/copy';
 
-  let exportFormat = $state<'css' | 'tailwind' | 'json'>('css');
-  let showExport = $state(false);
-  let exportCopied = $state(false);
-
-  function generateExport(): string {
-    const colors = paletteStore.colors;
-
-    switch (exportFormat) {
-      case 'css':
-        return `:root {\n${colors.map((c, i) => `  --color-${i + 1}: ${c.hex};`).join('\n')}\n}`;
-      case 'tailwind':
-        return `colors: {\n  palette: {\n${colors.map((c, i) => `    ${(i + 1) * 100}: '${c.hex}',`).join('\n')}\n  }\n}`;
-      case 'json':
-        return JSON.stringify(colors.map(c => c.hex), null, 2);
-      default:
-        return '';
-    }
-  }
-
-  async function copyExport() {
-    try {
-      await navigator.clipboard.writeText(generateExport());
-      exportCopied = true;
-      setTimeout(() => {
-        exportCopied = false;
-      }, 1500);
-    } catch (err) {
-      console.error('Failed to copy:', err);
-    }
-  }
+  let allCopied = $state(false);
 
   async function copyAllHex() {
     const hexValues = paletteStore.colors.map(c => c.hex).join('\n');
     try {
       await navigator.clipboard.writeText(hexValues);
-    } catch (err) {
-      console.error('Failed to copy:', err);
+      allCopied = true;
+      setTimeout(() => (allCopied = false), 1500);
+    } catch (error) {
+      console.error('Failed to copy palette:', error);
     }
   }
 </script>
 
-<div class="palette-display">
-  <div class="palette-header">
-    <h2>Generated Palette</h2>
-    <div class="actions">
-      <button class="action-btn" onclick={copyAllHex}>
-        Copy All
-      </button>
-      <button class="action-btn" onclick={() => showExport = !showExport}>
-        Export
-      </button>
+<Card.Root>
+  <Card.Header class="border-b sm:grid-cols-[1fr_auto]">
+    <div>
+      <Card.Title>Generated palette</Card.Title>
+      <Card.Description>Hover for color values and WCAG contrast. Select a swatch to copy.</Card.Description>
     </div>
-  </div>
+    <Card.Action class="mt-3 flex flex-wrap gap-2 sm:mt-0">
+      <Button variant="outline" size="sm" onclick={copyAllHex}>
+        {#if allCopied}
+          <Check data-icon="inline-start" />
+          Copied
+        {:else}
+          <Copy data-icon="inline-start" />
+          Copy all
+        {/if}
+      </Button>
+      <Dialog.Root>
+        <Dialog.Trigger>
+          {#snippet child({ props })}
+            <Button {...props} size="sm">
+              <CodeXml data-icon="inline-start" />
+              Export
+            </Button>
+          {/snippet}
+        </Dialog.Trigger>
+        <Dialog.Content class="sm:max-w-2xl">
+          <Dialog.Header>
+            <Dialog.Title>Export palette</Dialog.Title>
+            <Dialog.Description>Copy a ready-to-use format or download CSS variables.</Dialog.Description>
+          </Dialog.Header>
+          <ExportPanel colors={paletteStore.colors} />
+        </Dialog.Content>
+      </Dialog.Root>
+    </Card.Action>
+  </Card.Header>
 
-  <div class="swatches">
-    {#each paletteStore.colors as color, index}
-      <ColorSwatch {color} {index} />
-    {/each}
-  </div>
-
-  {#if showExport}
-    <div class="export-panel">
-      <div class="export-tabs">
-        <button
-          class="export-tab"
-          class:active={exportFormat === 'css'}
-          onclick={() => exportFormat = 'css'}
-        >
-          CSS
-        </button>
-        <button
-          class="export-tab"
-          class:active={exportFormat === 'tailwind'}
-          onclick={() => exportFormat = 'tailwind'}
-        >
-          Tailwind
-        </button>
-        <button
-          class="export-tab"
-          class:active={exportFormat === 'json'}
-          onclick={() => exportFormat = 'json'}
-        >
-          JSON
-        </button>
+  <Card.Content>
+    <Tooltip.Provider delayDuration={250}>
+      <div class="grid grid-cols-2 gap-3 sm:grid-cols-5">
+        {#each paletteStore.colors as color, index}
+          <ColorSwatch {color} {index} />
+        {/each}
       </div>
-      <pre class="export-code">{generateExport()}</pre>
-      <button class="copy-export-btn" onclick={copyExport}>
-        {exportCopied ? 'Copied!' : 'Copy to Clipboard'}
-      </button>
-    </div>
-  {/if}
-</div>
-
-<style>
-  .palette-display {
-    background: var(--bg-surface);
-    border-radius: 12px;
-    padding: 20px;
-  }
-
-  .palette-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 20px;
-  }
-
-  h2 {
-    margin: 0;
-    font-size: 18px;
-    font-weight: 600;
-  }
-
-  .actions {
-    display: flex;
-    gap: 8px;
-  }
-
-  .action-btn {
-    background: var(--bg-elevated);
-    border: 1px solid var(--border-color);
-    border-radius: 6px;
-    padding: 8px 16px;
-    color: var(--text-primary);
-    font-size: 13px;
-    cursor: pointer;
-    transition: all 0.15s ease;
-  }
-
-  .action-btn:hover {
-    background: var(--border-color);
-  }
-
-  .swatches {
-    display: flex;
-    gap: 12px;
-  }
-
-  .export-panel {
-    margin-top: 20px;
-    padding-top: 20px;
-    border-top: 1px solid var(--border-color);
-  }
-
-  .export-tabs {
-    display: flex;
-    gap: 4px;
-    margin-bottom: 12px;
-  }
-
-  .export-tab {
-    background: transparent;
-    border: none;
-    padding: 8px 16px;
-    color: var(--text-secondary);
-    font-size: 13px;
-    cursor: pointer;
-    border-radius: 6px;
-    transition: all 0.15s ease;
-  }
-
-  .export-tab:hover {
-    color: var(--text-primary);
-  }
-
-  .export-tab.active {
-    background: var(--bg-elevated);
-    color: var(--text-primary);
-  }
-
-  .export-code {
-    background: var(--bg-elevated);
-    border-radius: 8px;
-    padding: 16px;
-    margin: 0;
-    font-family: monospace;
-    font-size: 13px;
-    overflow-x: auto;
-    color: var(--text-secondary);
-  }
-
-  .copy-export-btn {
-    margin-top: 12px;
-    width: 100%;
-    background: #3b82f6;
-    border: none;
-    border-radius: 6px;
-    padding: 10px 16px;
-    color: white;
-    font-size: 14px;
-    cursor: pointer;
-    transition: background 0.15s ease;
-  }
-
-  .copy-export-btn:hover {
-    background: #2563eb;
-  }
-</style>
+    </Tooltip.Provider>
+    <p class="sr-only" aria-live="polite">{allCopied ? 'All HEX values copied' : ''}</p>
+  </Card.Content>
+</Card.Root>
