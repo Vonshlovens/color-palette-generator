@@ -6,6 +6,7 @@
   import * as Tooltip from '$lib/components/ui/tooltip';
   import ColorSwatch from './ColorSwatch.svelte';
   import ExportPanel from './ExportPanel.svelte';
+  import SavePalette from './SavePalette.svelte';
   import Check from '@lucide/svelte/icons/check';
   import CodeXml from '@lucide/svelte/icons/code-xml';
   import Copy from '@lucide/svelte/icons/copy';
@@ -31,6 +32,7 @@
       <Card.Description>Hover for color values and WCAG contrast. Select a swatch to copy.</Card.Description>
     </div>
     <Card.Action class="mt-3 flex flex-wrap gap-2 sm:mt-0">
+      <SavePalette />
       <Button variant="outline" size="sm" onclick={copyAllHex}>
         {#if allCopied}
           <Check data-icon="inline-start" />

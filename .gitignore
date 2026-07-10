@@ -6,3 +6,8 @@ build
 !.env.example
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
+local.db
+local.db-*
+*.sqlite
+*.sqlite-*
+data/

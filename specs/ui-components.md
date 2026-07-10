@@ -124,6 +124,19 @@ colors: {
 }
 ```
 
+### 6. SavePalette (v2)
+**Purpose:** Create a named, immutable snapshot of the current palette inputs.
+
+**Features:**
+- Name input with client and server validation
+- Accessible loading, error, and success status
+- Creates a public share URL and navigates to it after saving
+- Available in both the generator and shared-palette workspaces
+
+**Persistence:**
+- Stores HSL channels and harmony type, not generated HEX/RGB output
+- Saving an edited shared palette always creates a new snapshot
+
 ## Visual Design
 
 ### Color Scheme

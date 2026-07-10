@@ -16,13 +16,16 @@ export interface Color {
   hex: string;
 }
 
-export type HarmonyType =
-  | 'complementary'
-  | 'analogous'
-  | 'triadic'
-  | 'split-complementary'
-  | 'tetradic'
-  | 'monochromatic';
+export const HARMONY_TYPES = [
+  'complementary',
+  'analogous',
+  'triadic',
+  'split-complementary',
+  'tetradic',
+  'monochromatic'
+] as const;
+
+export type HarmonyType = (typeof HARMONY_TYPES)[number];
 
 export interface Palette {
   baseColor: Color;
@@ -35,4 +38,17 @@ export interface PaletteState {
   saturation: number;
   lightness: number;
   harmony: HarmonyType;
+}
+
+export type PaletteSnapshot = Readonly<PaletteState>;
+
+export interface SavedPalette {
+  slug: string;
+  name: string;
+  hue: number;
+  saturation: number;
+  lightness: number;
+  harmony: HarmonyType;
+  createdAt: string;
+  updatedAt: string;
 }

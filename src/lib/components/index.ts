@@ -4,4 +4,5 @@ export { default as ColorSwatch } from './ColorSwatch.svelte';
 export { default as PaletteDisplay } from './PaletteDisplay.svelte';
 export { default as ExportPanel } from './ExportPanel.svelte';
 export { default as PaletteWorkspace } from './PaletteWorkspace.svelte';
+export { default as SavePalette } from './SavePalette.svelte';
 export { default as ThemeControl } from './ThemeControl.svelte';
