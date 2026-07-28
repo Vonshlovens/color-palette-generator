@@ -1,5 +1,9 @@
 <script lang="ts">
   import { getPaletteStoreContext } from '$lib/stores/palette.svelte';
+  import {
+    getHarmonyLayoutClass,
+    SIXTY_THIRTY_TEN_ROLES
+  } from '$lib/color/harmonies';
   import { Button } from '$lib/components/ui/button';
   import * as Card from '$lib/components/ui/card';
   import * as Dialog from '$lib/components/ui/dialog';
@@ -7,12 +11,18 @@
   import ColorSwatch from './ColorSwatch.svelte';
   import ExportPanel from './ExportPanel.svelte';
   import SavePalette from './SavePalette.svelte';
+  import WebsitePreview from './WebsitePreview.svelte';
   import Check from '@lucide/svelte/icons/check';
   import CodeXml from '@lucide/svelte/icons/code-xml';
   import Copy from '@lucide/svelte/icons/copy';
 
   const paletteStore = getPaletteStoreContext();
   let allCopied = $state(false);
+
+  const layoutClass = $derived(
+    getHarmonyLayoutClass(paletteStore.harmony, paletteStore.colors.length)
+  );
+  const isSixtyThirtyTen = $derived(paletteStore.harmony === '60-30-10');
 
   async function copyAllHex() {
     const hexValues = paletteStore.colors.map(c => c.hex).join('\n');
@@ -30,7 +40,13 @@
   <Card.Header class="border-b sm:grid-cols-[1fr_auto]">
     <div>
       <Card.Title>Generated palette</Card.Title>
-      <Card.Description>Hover for color values and WCAG contrast. Select a swatch to copy.</Card.Description>
+      <Card.Description>
+        {#if isSixtyThirtyTen}
+          Proportional swatches for dominant, secondary, and accent roles. Lock any swatch to keep it fixed.
+        {:else}
+          {paletteStore.colors.length} colors for this harmony. Lock any swatch to keep it fixed while you tweak the base.
+        {/if}
+      </Card.Description>
     </div>
     <Card.Action class="mt-3 flex flex-wrap gap-2 sm:mt-0">
       <SavePalette />
@@ -63,14 +79,36 @@
     </Card.Action>
   </Card.Header>
 
-  <Card.Content>
+  <Card.Content class="space-y-6">
     <Tooltip.Provider delayDuration={250}>
-      <div class="grid grid-cols-2 gap-3 sm:grid-cols-5">
+      <div class={layoutClass}>
         {#each paletteStore.colors as color, index}
-          <ColorSwatch {color} {index} />
+          <ColorSwatch
+            {color}
+            {index}
+            roleLabel={isSixtyThirtyTen ? SIXTY_THIRTY_TEN_ROLES[index] : undefined}
+            locked={paletteStore.isLocked(index)}
+            onToggleLock={(i) => paletteStore.toggleLock(i)}
+          />
         {/each}
       </div>
     </Tooltip.Provider>
+
+    {#if paletteStore.lockedCount > 0}
+      <div class="flex flex-wrap items-center justify-between gap-2">
+        <p class="text-muted-foreground text-xs">
+          {paletteStore.lockedCount} locked color{paletteStore.lockedCount === 1 ? '' : 's'} — unlock or clear to let them follow the base again.
+        </p>
+        <Button variant="ghost" size="sm" onclick={() => paletteStore.clearLocks()}>
+          Clear locks
+        </Button>
+      </div>
+    {/if}
+
+    {#if isSixtyThirtyTen}
+      <WebsitePreview colors={paletteStore.colors} />
+    {/if}
+
     <p class="sr-only" aria-live="polite">{allCopied ? 'All HEX values copied' : ''}</p>
   </Card.Content>
 </Card.Root>

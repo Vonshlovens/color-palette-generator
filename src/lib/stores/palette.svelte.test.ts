@@ -37,6 +37,59 @@ describe('createPaletteStore', () => {
       lightness: 35,
       harmony: 'analogous'
     });
-    expect(store.colors).toHaveLength(5);
+    expect(store.colors).toHaveLength(3);
+  });
+
+  it('keeps locked colors fixed while the base changes', () => {
+    const store = createPaletteStore({
+      hue: 220,
+      saturation: 70,
+      lightness: 50,
+      harmony: 'complementary'
+    });
+
+    const lockedHex = store.colors[1].hex;
+    store.toggleLock(1);
+    expect(store.isLocked(1)).toBe(true);
+
+    store.setHue(40);
+    expect(store.colors[1].hex).toBe(lockedHex);
+    expect(store.colors[0].hsl.h).toBe(40);
+
+    store.toggleLock(1);
+    expect(store.isLocked(1)).toBe(false);
+    expect(store.colors[1].hsl.h).toBe(220);
+  });
+
+  it('clears locks when harmony changes', () => {
+    const store = createPaletteStore({
+      hue: 200,
+      saturation: 70,
+      lightness: 50,
+      harmony: 'monochromatic'
+    });
+
+    store.toggleLock(0);
+    store.toggleLock(4);
+    expect(store.lockedCount).toBe(2);
+
+    store.setHarmony('60-30-10');
+    expect(store.lockedCount).toBe(0);
+  });
+
+  it('clears locks on hydrate', () => {
+    const store = createPaletteStore();
+    store.toggleLock(0);
+    expect(store.lockedCount).toBe(1);
+
+    expect(
+      store.hydrate({
+        hue: 10,
+        saturation: 60,
+        lightness: 40,
+        harmony: 'triadic'
+      })
+    ).toBe(true);
+    expect(store.lockedCount).toBe(0);
   });
 });

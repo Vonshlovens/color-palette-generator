@@ -4,16 +4,30 @@
   import * as Tooltip from '$lib/components/ui/tooltip';
   import Check from '@lucide/svelte/icons/check';
   import Copy from '@lucide/svelte/icons/copy';
+  import Lock from '@lucide/svelte/icons/lock';
+  import LockOpen from '@lucide/svelte/icons/lock-open';
 
   interface Props {
     color: Color;
     index: number;
     size?: 'small' | 'medium' | 'large';
     showLabel?: boolean;
+    roleLabel?: string;
+    locked?: boolean;
     onCopy?: (index: number) => void;
+    onToggleLock?: (index: number) => void;
   }
 
-  let { color, index, size = 'large', showLabel = true, onCopy }: Props = $props();
+  let {
+    color,
+    index,
+    size = 'large',
+    showLabel = true,
+    roleLabel,
+    locked = false,
+    onCopy,
+    onToggleLock
+  }: Props = $props();
 
   let copied = $state(false);
 
@@ -30,7 +44,14 @@
     }
   }
 
+  function handleLockClick(event: MouseEvent) {
+    event.preventDefault();
+    event.stopPropagation();
+    onToggleLock?.(index);
+  }
+
   const textColor = $derived(getContrastTextColor(color.rgb));
+  const foreground = $derived(textColor === 'dark' ? '#111827' : '#ffffff');
   const whiteContrast = $derived(getContrastRatio(color.rgb, { r: 255, g: 255, b: 255 }));
   const blackContrast = $derived(getContrastRatio(color.rgb, { r: 0, g: 0, b: 0 }));
   const sizeClass = $derived(
@@ -45,28 +66,68 @@
 <Tooltip.Root>
   <Tooltip.Trigger>
     {#snippet child({ props })}
-      <button
+      <div
         {...props}
-        type="button"
-        class="{sizeClass} group relative flex w-full min-w-0 flex-col justify-between overflow-hidden rounded-xl border p-3 text-left shadow-sm transition-all hover:-translate-y-1 hover:shadow-lg focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none active:translate-y-0"
-        style="background-color: {color.hex}; color: {textColor === 'dark' ? '#111827' : '#ffffff'}"
-        onclick={copyToClipboard}
-        aria-label="Copy {color.hex}, palette color {index + 1}"
+        class="{sizeClass} group relative flex w-full min-w-0 flex-col justify-between overflow-hidden rounded-xl border p-3 text-left shadow-sm transition-all hover:-translate-y-1 hover:shadow-lg {locked
+          ? 'ring-2 ring-white/80 ring-offset-2 ring-offset-black/20'
+          : ''}"
+        style="background-color: {color.hex}; color: {foreground}"
       >
-        <span class="flex w-full items-center justify-between text-xs font-medium opacity-75">
-          <span>0{index + 1}</span>
-          {#if copied}
-            <Check class="size-4" aria-hidden="true" />
-          {:else}
-            <Copy class="size-4 opacity-0 transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100" aria-hidden="true" />
-          {/if}
-        </span>
+        <div class="flex w-full items-start justify-between gap-2 text-xs font-medium opacity-90">
+          <button
+            type="button"
+            class="min-w-0 flex-1 rounded-md text-left focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
+            onclick={copyToClipboard}
+            aria-label="Copy {color.hex}, palette color {index + 1}"
+          >
+            <span class="block truncate">{roleLabel ?? `0${index + 1}`}</span>
+          </button>
+          <div class="flex shrink-0 items-center gap-1">
+            {#if onToggleLock}
+              <button
+                type="button"
+                class="rounded-md p-1 transition-opacity hover:bg-black/10 focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none dark:hover:bg-white/15 {locked
+                  ? 'opacity-100'
+                  : 'opacity-0 group-hover:opacity-100 group-focus-within:opacity-100'}"
+                onclick={handleLockClick}
+                aria-pressed={locked}
+                aria-label={locked
+                  ? `Unlock palette color ${index + 1}`
+                  : `Lock palette color ${index + 1}`}
+                title={locked ? 'Unlock color' : 'Lock color'}
+              >
+                {#if locked}
+                  <Lock class="size-4" aria-hidden="true" />
+                {:else}
+                  <LockOpen class="size-4" aria-hidden="true" />
+                {/if}
+              </button>
+            {/if}
+            {#if copied}
+              <Check class="size-4" aria-hidden="true" />
+            {:else}
+              <Copy
+                class="size-4 opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100"
+                aria-hidden="true"
+              />
+            {/if}
+          </div>
+        </div>
         {#if showLabel}
-          <span class="font-mono text-sm font-semibold tracking-wide uppercase">
+          <button
+            type="button"
+            class="font-mono text-sm font-semibold tracking-wide uppercase focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
+            onclick={copyToClipboard}
+          >
             {copied ? 'Copied!' : color.hex}
-          </span>
+            {#if locked}
+              <span class="mt-1 block text-[10px] font-medium tracking-wide uppercase opacity-80">
+                Locked
+              </span>
+            {/if}
+          </button>
         {/if}
-      </button>
+      </div>
     {/snippet}
   </Tooltip.Trigger>
   <Tooltip.Content class="block max-w-72 p-3" sideOffset={8}>
@@ -80,6 +141,11 @@
         <span>White {whiteContrast.toFixed(2)}:1</span>
         <span>Black {blackContrast.toFixed(2)}:1</span>
       </div>
+      {#if locked}
+        <p class="border-background/20 border-t pt-2 text-xs">
+          Locked — stays fixed while you change the base color or randomize.
+        </p>
+      {/if}
     </div>
   </Tooltip.Content>
 </Tooltip.Root>

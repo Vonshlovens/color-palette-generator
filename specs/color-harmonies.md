@@ -8,28 +8,22 @@ Generate a palette based on colors opposite on the color wheel.
 **Algorithm:**
 - Base color at hue H
 - Complement at hue H + 180°
-- Fill with tints/shades of both
 
-**Output (5 colors):**
-1. Base color (100% saturation)
-2. Base tint (70% lightness)
-3. Complement (100% saturation)
-4. Complement tint (70% lightness)
-5. Neutral blend (50% saturation, between both hues)
+**Output (2 colors):**
+1. Base color
+2. Complement
 
 ### 2. Analogous
 Colors adjacent on the wheel for harmonious, cohesive palettes.
 
 **Algorithm:**
 - Base color at hue H
-- Colors at H - 30°, H - 15°, H + 15°, H + 30°
+- Neighbors at H - 30° and H + 30°
 
-**Output (5 colors):**
+**Output (3 colors):**
 1. H - 30°
-2. H - 15°
-3. Base (H)
-4. H + 15°
-5. H + 30°
+2. Base (H)
+3. H + 30°
 
 ### 3. Triadic
 Three colors evenly spaced for vibrant, balanced contrast.
@@ -39,12 +33,10 @@ Three colors evenly spaced for vibrant, balanced contrast.
 - Second at H + 120°
 - Third at H + 240°
 
-**Output (5 colors):**
+**Output (3 colors):**
 1. Base (H)
-2. Base tint (lighter)
-3. Second (H + 120°)
-4. Third (H + 240°)
-5. Third shade (darker)
+2. Second (H + 120°)
+3. Third (H + 240°)
 
 ### 4. Split-Complementary
 Similar to complementary but with two adjacent colors to the complement.
@@ -54,12 +46,10 @@ Similar to complementary but with two adjacent colors to the complement.
 - Split 1 at H + 150°
 - Split 2 at H + 210°
 
-**Output (5 colors):**
+**Output (3 colors):**
 1. Base (H)
-2. Base tint
-3. Split 1 (H + 150°)
-4. Split 2 (H + 210°)
-5. Neutral (desaturated base)
+2. Split 1 (H + 150°)
+3. Split 2 (H + 210°)
 
 ### 5. Tetradic (Rectangle)
 Four colors forming a rectangle on the wheel.
@@ -70,20 +60,18 @@ Four colors forming a rectangle on the wheel.
 - Third at H + 180°
 - Fourth at H + 240°
 
-**Output (5 colors):**
+**Output (4 colors):**
 1. Base (H)
 2. H + 60°
 3. H + 180°
 4. H + 240°
-5. Neutral bridge
 
 ### 6. Monochromatic
 Single hue with variations in saturation and lightness.
 
 **Algorithm:**
 - All colors share hue H
-- Vary saturation: 100%, 80%, 60%, 40%, 20%
-- Vary lightness: 20%, 35%, 50%, 65%, 80%
+- Vary saturation and lightness across a shade-to-tint ramp
 
 **Output (5 colors):**
 1. Dark shade (L: 25%, S: 90%)
@@ -91,6 +79,35 @@ Single hue with variations in saturation and lightness.
 3. Base (L: 50%, S: 100%)
 4. Light tint (L: 65%, S: 70%)
 5. Pale tint (L: 80%, S: 50%)
+
+### 7. 60-30-10
+UI-oriented palette with dominant, secondary, and accent roles.
+
+**Algorithm:**
+- Dominant (60%): lighter / slightly softer relative offset from the live base
+- Secondary (30%): deeper relative offset from the live base
+- Accent (10%): complementary hue of the live base
+
+**Output (3 colors):**
+1. Dominant — base hue, S-15, L+22
+2. Secondary — base hue, S-5, L-22
+3. Accent — complement hue, S+10, same L as base
+
+**Preview:**
+- Palette swatches use a proportional 6:3:1 layout
+- An abstract website mock shows how the roles map onto header, canvas, cards, and CTAs
+
+## Palette Layouts
+
+| Harmony | Count | Layout |
+|---------|-------|--------|
+| Complementary | 2 | Two equal columns |
+| Analogous | 3 | Three equal columns |
+| Triadic | 3 | Three equal columns |
+| Split-Complementary | 3 | Three equal columns |
+| Tetradic | 4 | 2×2 grid |
+| Monochromatic | 5 | Five-across row |
+| 60-30-10 | 3 | Proportional 60/30/10 widths + website preview |
 
 ## Saturation/Lightness Adjustments
 

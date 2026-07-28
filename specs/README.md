@@ -11,17 +11,19 @@ A visual tool for generating harmonious color palettes using color theory algori
 
 ### Harmony Types
 - **Complementary** - Two colors opposite on the wheel (180°)
-- **Analogous** - Three colors adjacent on the wheel (30° apart)
+- **Analogous** - Three colors adjacent on the wheel (±30°)
 - **Triadic** - Three colors evenly spaced (120° apart)
 - **Split-Complementary** - Base + two adjacent to complement (150°, 210°)
 - **Tetradic** - Four colors in rectangle pattern
 - **Monochromatic** - Single hue with varied saturation/lightness
+- **60-30-10** - Dominant, secondary, and accent roles for UI systems
 
 ### Palette Output
-- 5-color palettes as default
+- Color count and layout follow the selected harmony (not a fixed five-swatch grid)
 - Each color includes: HEX, RGB, HSL values
 - Contrast ratio indicators for accessibility
 - Copy-to-clipboard functionality
+- 60-30-10 also shows an abstract website preview
 
 ## User Flow
 

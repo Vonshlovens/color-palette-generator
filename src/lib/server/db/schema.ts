@@ -29,7 +29,7 @@ export const palettes = sqliteTable(
     check('palettes_lightness_check', sql`${table.lightness} between 0 and 100`),
     check(
       'palettes_harmony_check',
-      sql`${table.harmony} in ('complementary', 'analogous', 'triadic', 'split-complementary', 'tetradic', 'monochromatic')`
+      sql`${table.harmony} in ('complementary', 'analogous', 'triadic', 'split-complementary', 'tetradic', 'monochromatic', '60-30-10')`
     )
   ]
 );

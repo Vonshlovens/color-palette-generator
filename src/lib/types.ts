@@ -22,7 +22,8 @@ export const HARMONY_TYPES = [
   'triadic',
   'split-complementary',
   'tetradic',
-  'monochromatic'
+  'monochromatic',
+  '60-30-10'
 ] as const;
 
 export type HarmonyType = (typeof HARMONY_TYPES)[number];

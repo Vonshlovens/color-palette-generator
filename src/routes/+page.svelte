@@ -36,8 +36,8 @@
         <Badge variant="outline" class="mb-3">HSL-powered</Badge>
         <h1 class="text-2xl font-semibold tracking-tight sm:text-3xl">Build a balanced color system</h1>
         <p class="text-muted-foreground mt-2 text-sm leading-relaxed sm:text-base">
-          Choose a base color, explore proven harmony rules, and export an accessible five-color
-          palette.
+          Choose a base color, explore proven harmony rules, and export a palette sized to the
+          relationship you pick — including a 60-30-10 website preview.
         </p>
       </div>
       <p class="text-muted-foreground text-xs">All color calculations stay in your browser.</p>

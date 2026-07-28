@@ -19,8 +19,14 @@ const DEFAULT_STATE: PaletteState = {
 
 const PALETTE_STORE_CONTEXT = Symbol('palette-store');
 
+function cloneColor(color: Color): Color {
+  return createColor({ ...color.hsl });
+}
+
 export class PaletteStore {
   #state = $state<PaletteState>({ ...DEFAULT_STATE });
+  /** Locked palette slots keyed by index; locked colors stay fixed while the base changes. */
+  #locks = $state<Record<number, Color>>({});
 
   constructor(snapshot?: PaletteSnapshot) {
     if (snapshot) this.hydrate(snapshot);
@@ -54,8 +60,44 @@ export class PaletteStore {
     return createColor(this.baseHsl);
   }
 
+  get locks(): Readonly<Record<number, Color>> {
+    return this.#locks;
+  }
+
+  get lockedCount(): number {
+    return Object.keys(this.#locks).length;
+  }
+
   get colors(): Color[] {
-    return generatePalette(this.baseHsl, this.#state.harmony);
+    const generated = generatePalette(this.baseHsl, this.#state.harmony);
+    return generated.map((color, index) =>
+      this.#locks[index] ? cloneColor(this.#locks[index]) : color
+    );
+  }
+
+  isLocked(index: number): boolean {
+    return this.#locks[index] !== undefined;
+  }
+
+  toggleLock(index: number): void {
+    if (!Number.isInteger(index) || index < 0) return;
+
+    if (this.isLocked(index)) {
+      const { [index]: _removed, ...rest } = this.#locks;
+      this.#locks = rest;
+      return;
+    }
+
+    const generated = generatePalette(this.baseHsl, this.#state.harmony);
+    if (index >= generated.length) return;
+
+    // Lock the currently displayed color (respecting any existing locks).
+    const current = this.colors[index];
+    this.#locks = { ...this.#locks, [index]: cloneColor(current) };
+  }
+
+  clearLocks(): void {
+    this.#locks = {};
   }
 
   setHue(value: number): void {
@@ -72,6 +114,8 @@ export class PaletteStore {
 
   setHarmony(value: HarmonyType): void {
     this.#state.harmony = value;
+    // Drop locks when the relationship changes so a previous mode can't freeze the new palette.
+    this.clearLocks();
   }
 
   setHsl(hsl: HSL): void {
@@ -106,9 +150,11 @@ export class PaletteStore {
     }
 
     this.#state = { ...snapshot };
+    this.clearLocks();
     return true;
   }
 
+  /** Randomize the base HSL only; locked palette slots stay put. */
   randomize(): void {
     this.#state.hue = Math.floor(Math.random() * 360);
     this.#state.saturation = 50 + Math.floor(Math.random() * 40);

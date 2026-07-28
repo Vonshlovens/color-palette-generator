@@ -1,6 +1,19 @@
 import type { HSL, Color, HarmonyType } from '$lib/types';
 import { createColor, normalizeHue, clamp } from './conversions';
 
+/** Expected swatch count for each harmony (true to the color-theory relationship). */
+export const HARMONY_COLOR_COUNTS: Record<HarmonyType, number> = {
+  complementary: 2,
+  analogous: 3,
+  triadic: 3,
+  'split-complementary': 3,
+  tetradic: 4,
+  monochromatic: 5,
+  '60-30-10': 3
+};
+
+export const SIXTY_THIRTY_TEN_ROLES = ['Dominant 60%', 'Secondary 30%', 'Accent 10%'] as const;
+
 /**
  * Generate a color palette based on harmony type
  */
@@ -18,6 +31,8 @@ export function generatePalette(baseHsl: HSL, harmony: HarmonyType): Color[] {
       return generateTetradic(baseHsl);
     case 'monochromatic':
       return generateMonochromatic(baseHsl);
+    case '60-30-10':
+      return generateSixtyThirtyTen(baseHsl);
     default:
       return generateComplementary(baseHsl);
   }
@@ -30,13 +45,7 @@ function generateComplementary(base: HSL): Color[] {
   const { h, s, l } = base;
   const complementHue = normalizeHue(h + 180);
 
-  return [
-    createColor({ h, s, l }),
-    createColor({ h, s: clamp(s - 15, 0, 100), l: clamp(l + 20, 0, 100) }),
-    createColor({ h: complementHue, s, l }),
-    createColor({ h: complementHue, s: clamp(s - 15, 0, 100), l: clamp(l + 20, 0, 100) }),
-    createColor({ h: normalizeHue(h + 90), s: 20, l: 50 })
-  ];
+  return [createColor({ h, s, l }), createColor({ h: complementHue, s, l })];
 }
 
 /**
@@ -47,9 +56,7 @@ function generateAnalogous(base: HSL): Color[] {
 
   return [
     createColor({ h: normalizeHue(h - 30), s, l }),
-    createColor({ h: normalizeHue(h - 15), s, l }),
     createColor({ h, s, l }),
-    createColor({ h: normalizeHue(h + 15), s, l }),
     createColor({ h: normalizeHue(h + 30), s, l })
   ];
 }
@@ -59,15 +66,11 @@ function generateAnalogous(base: HSL): Color[] {
  */
 function generateTriadic(base: HSL): Color[] {
   const { h, s, l } = base;
-  const second = normalizeHue(h + 120);
-  const third = normalizeHue(h + 240);
 
   return [
     createColor({ h, s, l }),
-    createColor({ h, s: clamp(s - 20, 0, 100), l: clamp(l + 15, 0, 100) }),
-    createColor({ h: second, s, l }),
-    createColor({ h: third, s, l }),
-    createColor({ h: third, s: clamp(s - 20, 0, 100), l: clamp(l - 15, 0, 100) })
+    createColor({ h: normalizeHue(h + 120), s, l }),
+    createColor({ h: normalizeHue(h + 240), s, l })
   ];
 }
 
@@ -76,15 +79,11 @@ function generateTriadic(base: HSL): Color[] {
  */
 function generateSplitComplementary(base: HSL): Color[] {
   const { h, s, l } = base;
-  const split1 = normalizeHue(h + 150);
-  const split2 = normalizeHue(h + 210);
 
   return [
     createColor({ h, s, l }),
-    createColor({ h, s: clamp(s - 20, 0, 100), l: clamp(l + 20, 0, 100) }),
-    createColor({ h: split1, s, l }),
-    createColor({ h: split2, s, l }),
-    createColor({ h, s: 20, l: clamp(l + 10, 0, 100) })
+    createColor({ h: normalizeHue(h + 150), s, l }),
+    createColor({ h: normalizeHue(h + 210), s, l })
   ];
 }
 
@@ -98,8 +97,7 @@ function generateTetradic(base: HSL): Color[] {
     createColor({ h, s, l }),
     createColor({ h: normalizeHue(h + 60), s, l }),
     createColor({ h: normalizeHue(h + 180), s, l }),
-    createColor({ h: normalizeHue(h + 240), s, l }),
-    createColor({ h: normalizeHue(h + 120), s: 25, l: 50 })
+    createColor({ h: normalizeHue(h + 240), s, l })
   ];
 }
 
@@ -119,6 +117,36 @@ function generateMonochromatic(base: HSL): Color[] {
 }
 
 /**
+ * 60-30-10: Dominant surface, secondary support, and accent colors for UI systems.
+ * Roles use relative offsets from the base so H/S/L slider changes stay visible.
+ */
+function generateSixtyThirtyTen(base: HSL): Color[] {
+  const { h, s, l } = base;
+  const accentHue = normalizeHue(h + 180);
+
+  return [
+    // Dominant 60% — lighter, slightly softer base for large surfaces
+    createColor({
+      h,
+      s: clamp(s - 15, 0, 100),
+      l: clamp(l + 22, 0, 96)
+    }),
+    // Secondary 30% — deeper base for nav, cards, supporting blocks
+    createColor({
+      h,
+      s: clamp(s - 5, 0, 100),
+      l: clamp(l - 22, 4, 100)
+    }),
+    // Accent 10% — complementary of the live base for CTAs / highlights
+    createColor({
+      h: accentHue,
+      s: clamp(s + 10, 0, 100),
+      l
+    })
+  ];
+}
+
+/**
  * Get display name for harmony type
  */
 export function getHarmonyName(harmony: HarmonyType): string {
@@ -128,7 +156,8 @@ export function getHarmonyName(harmony: HarmonyType): string {
     triadic: 'Triadic',
     'split-complementary': 'Split-Complementary',
     tetradic: 'Tetradic',
-    monochromatic: 'Monochromatic'
+    monochromatic: 'Monochromatic',
+    '60-30-10': '60-30-10'
   };
   return names[harmony];
 }
@@ -139,11 +168,34 @@ export function getHarmonyName(harmony: HarmonyType): string {
 export function getHarmonyDescription(harmony: HarmonyType): string {
   const descriptions: Record<HarmonyType, string> = {
     complementary: 'Two colors opposite on the color wheel',
-    analogous: 'Colors adjacent on the wheel for cohesion',
+    analogous: 'Three neighboring hues for cohesion',
     triadic: 'Three colors evenly spaced for balance',
     'split-complementary': 'Base with two adjacent to its complement',
     tetradic: 'Four colors forming a rectangle',
-    monochromatic: 'Single hue with varied intensity'
+    monochromatic: 'Single hue with varied intensity',
+    '60-30-10': 'Dominant, secondary, and accent roles for UI layouts'
   };
   return descriptions[harmony];
+}
+
+/**
+ * Tailwind grid class for the palette swatch layout
+ */
+export function getHarmonyLayoutClass(harmony: HarmonyType, count: number): string {
+  if (harmony === '60-30-10') {
+    return 'grid grid-cols-1 gap-3 sm:grid-cols-[6fr_3fr_1fr]';
+  }
+
+  switch (count) {
+    case 2:
+      return 'grid grid-cols-2 gap-3';
+    case 3:
+      return 'grid grid-cols-1 gap-3 sm:grid-cols-3';
+    case 4:
+      return 'grid grid-cols-2 gap-3';
+    case 5:
+      return 'grid grid-cols-2 gap-3 sm:grid-cols-5';
+    default:
+      return 'grid grid-cols-2 gap-3 sm:grid-cols-3';
+  }
 }

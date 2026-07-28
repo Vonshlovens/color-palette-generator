@@ -25,6 +25,7 @@
 │                       │  ○ Split-Complementary        │ │
 │                       │  ○ Tetradic                   │ │
 │                       │  ○ Monochromatic              │ │
+│                       │  ○ 60-30-10                   │ │
 │                       └───────────────────────────────┘ │
 │                                                         │
 └─────────────────────────────────────────────────────────┘
@@ -41,6 +42,7 @@
 - Lightness slider (0-100%)
 - HEX input field with validation
 - Live color preview swatch
+- Randomize base color (picks a new HSL base; palette remains algorithmic from that base)
 
 **State:**
 - `hue: number` (0-360)
@@ -49,6 +51,11 @@
 
 **Events:**
 - `onColorChange(hsl: HSL)` - Fires on any slider/input change
+
+**Notes:**
+- Generated palette colors are deterministic from the base HSL + harmony algorithm.
+- They are not random unless the user presses Randomize (which only randomizes the base).
+- Locked swatches stay fixed across base changes and randomize.
 
 ### 2. HarmonySelector
 **Purpose:** Choose the color harmony algorithm
@@ -68,19 +75,32 @@
 **Purpose:** Show the generated color palette
 
 **Features:**
-- 5 color swatches in a row
+- Swatch count and grid layout follow the active harmony
 - Each swatch shows:
   - Color fill
   - HEX code overlay (click to copy)
+  - Lock toggle to freeze that slot while the base color changes
   - Contrast indicator (light/dark text)
 - Hover state reveals full color info
+- For 60-30-10: proportional swatches plus an abstract website preview
+- Clear-locks action when any swatches are locked
 
 **State:**
 - `colors: Color[]`
+- `locks: Record<number, Color>`
 - `copiedIndex: number | null` (for copy feedback)
 
 **Events:**
 - `onColorCopy(index: number)`
+- `onToggleLock(index: number)`
+
+### 3b. WebsitePreview
+**Purpose:** Show how a 60-30-10 palette might appear on a site
+
+**Features:**
+- Abstract header, content, cards, sidebar, and CTA blocks
+- Maps Dominant / Secondary / Accent to page regions
+- Decorative only (non-interactive chrome)
 
 ### 4. ColorSwatch
 **Purpose:** Individual color display unit
@@ -89,9 +109,12 @@
 - `color: Color`
 - `size: 'small' | 'medium' | 'large'`
 - `showLabel: boolean`
+- `locked: boolean`
+- `onToggleLock?: (index: number) => void`
 
 **Features:**
-- Click to copy HEX
+- Click HEX / label to copy
+- Lock button freezes the slot against base/randomize updates
 - Tooltip with RGB/HSL values
 - Auto text color (black/white) based on luminance
 

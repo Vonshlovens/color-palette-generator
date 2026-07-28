@@ -46,8 +46,9 @@
       <Card.Header class="pl-6">
         <Card.Title>About {getHarmonyName(paletteStore.harmony)}</Card.Title>
         <Card.Description class="max-w-2xl leading-relaxed">
-          {getHarmonyDescription(paletteStore.harmony)}. The five-color output keeps your selected
-          base color in HSL while deriving supporting tints, shades, and wheel positions.
+          {getHarmonyDescription(paletteStore.harmony)}. The palette shows
+          {paletteStore.colors.length} color{paletteStore.colors.length === 1 ? '' : 's'} that match
+          this relationship, keeping your selected base color in HSL while deriving supporting hues.
         </Card.Description>
       </Card.Header>
     </Card.Root>

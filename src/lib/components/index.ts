@@ -6,3 +6,4 @@ export { default as ExportPanel } from './ExportPanel.svelte';
 export { default as PaletteWorkspace } from './PaletteWorkspace.svelte';
 export { default as SavePalette } from './SavePalette.svelte';
 export { default as ThemeControl } from './ThemeControl.svelte';
+export { default as WebsitePreview } from './WebsitePreview.svelte';

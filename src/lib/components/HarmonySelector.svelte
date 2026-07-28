@@ -7,6 +7,7 @@
   import * as Tooltip from '$lib/components/ui/tooltip';
   import CircleDot from '@lucide/svelte/icons/circle-dot';
   import GitFork from '@lucide/svelte/icons/git-fork';
+  import LayoutTemplate from '@lucide/svelte/icons/layout-template';
   import Orbit from '@lucide/svelte/icons/orbit';
   import RectangleHorizontal from '@lucide/svelte/icons/rectangle-horizontal';
   import Split from '@lucide/svelte/icons/split';
@@ -19,7 +20,8 @@
     { type: 'triadic', icon: Triangle },
     { type: 'split-complementary', icon: Split },
     { type: 'tetradic', icon: RectangleHorizontal },
-    { type: 'monochromatic', icon: GitFork }
+    { type: 'monochromatic', icon: GitFork },
+    { type: '60-30-10', icon: LayoutTemplate }
   ] satisfies { type: HarmonyType; icon: typeof CircleDot }[];
 
   function handleKeyboard(event: KeyboardEvent) {
@@ -39,7 +41,7 @@
 <Card.Root>
   <Card.Header class="border-b">
     <Card.Title>Harmony</Card.Title>
-    <Card.Description>Choose how colors relate on the color wheel.</Card.Description>
+    <Card.Description>Choose how colors relate — each rule shows a different number of swatches.</Card.Description>
   </Card.Header>
   <Card.Content>
     <Tooltip.Provider delayDuration={300}>

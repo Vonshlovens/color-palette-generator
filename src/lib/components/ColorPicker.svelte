@@ -141,7 +141,10 @@
 
     <Button variant="outline" class="w-full" onclick={() => paletteStore.randomize()}>
       <RefreshCw data-icon="inline-start" />
-      Randomize color
+      Randomize base color
     </Button>
+    <p class="text-muted-foreground text-xs">
+      Palettes are deterministic from this base color. Randomize only picks a new base HSL; locked swatches stay put.
+    </p>
   </Card.Content>
 </Card.Root>
