@@ -42,9 +42,10 @@
       <Card.Title>Generated palette</Card.Title>
       <Card.Description>
         {#if isSixtyThirtyTen}
-          Proportional swatches for dominant, secondary, and accent roles. Lock any swatch to keep it fixed.
+          Click a role to edit it. Lock any swatch to keep it fixed while you tweak others.
         {:else}
-          {paletteStore.colors.length} colors for this harmony. Lock any swatch to keep it fixed while you tweak the base.
+          Click a swatch to edit it. {paletteStore.colors.length} colors for this harmony — lock any
+          to keep it fixed.
         {/if}
       </Card.Description>
     </div>
@@ -88,6 +89,8 @@
             {index}
             roleLabel={isSixtyThirtyTen ? SIXTY_THIRTY_TEN_ROLES[index] : undefined}
             locked={paletteStore.isLocked(index)}
+            selected={paletteStore.selectedIndex === index}
+            onSelect={(i) => paletteStore.selectColor(i)}
             onToggleLock={(i) => paletteStore.toggleLock(i)}
           />
         {/each}

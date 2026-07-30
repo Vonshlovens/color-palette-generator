@@ -14,6 +14,8 @@
     showLabel?: boolean;
     roleLabel?: string;
     locked?: boolean;
+    selected?: boolean;
+    onSelect?: (index: number) => void;
     onCopy?: (index: number) => void;
     onToggleLock?: (index: number) => void;
   }
@@ -25,13 +27,17 @@
     showLabel = true,
     roleLabel,
     locked = false,
+    selected = false,
+    onSelect,
     onCopy,
     onToggleLock
   }: Props = $props();
 
   let copied = $state(false);
 
-  async function copyToClipboard() {
+  async function copyToClipboard(event: MouseEvent) {
+    event.preventDefault();
+    event.stopPropagation();
     try {
       await navigator.clipboard.writeText(color.hex);
       copied = true;
@@ -42,6 +48,10 @@
     } catch (err) {
       console.error('Failed to copy:', err);
     }
+  }
+
+  function handleSelect() {
+    onSelect?.(index);
   }
 
   function handleLockClick(event: MouseEvent) {
@@ -61,6 +71,7 @@
       large: 'min-h-48'
     }[size]
   );
+  const label = $derived(roleLabel ?? `Color ${index + 1}`);
 </script>
 
 <Tooltip.Root>
@@ -68,17 +79,20 @@
     {#snippet child({ props })}
       <div
         {...props}
-        class="{sizeClass} group relative flex w-full min-w-0 flex-col justify-between overflow-hidden rounded-xl border p-3 text-left shadow-sm transition-all hover:-translate-y-1 hover:shadow-lg {locked
-          ? 'ring-2 ring-white/80 ring-offset-2 ring-offset-black/20'
-          : ''}"
+        class="{sizeClass} group relative flex w-full min-w-0 flex-col justify-between overflow-hidden rounded-xl border p-3 text-left shadow-sm transition-all hover:-translate-y-1 hover:shadow-lg {selected
+          ? 'ring-2 ring-foreground ring-offset-2 ring-offset-background'
+          : locked
+            ? 'ring-2 ring-white/80 ring-offset-2 ring-offset-black/20'
+            : ''}"
         style="background-color: {color.hex}; color: {foreground}"
       >
         <div class="flex w-full items-start justify-between gap-2 text-xs font-medium opacity-90">
           <button
             type="button"
             class="min-w-0 flex-1 rounded-md text-left focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
-            onclick={copyToClipboard}
-            aria-label="Copy {color.hex}, palette color {index + 1}"
+            onclick={handleSelect}
+            aria-pressed={selected}
+            aria-label="Edit {label}, {color.hex}"
           >
             <span class="block truncate">{roleLabel ?? `0${index + 1}`}</span>
           </button>
@@ -103,24 +117,37 @@
                 {/if}
               </button>
             {/if}
-            {#if copied}
-              <Check class="size-4" aria-hidden="true" />
-            {:else}
-              <Copy
-                class="size-4 opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100"
-                aria-hidden="true"
-              />
-            {/if}
+            <button
+              type="button"
+              class="rounded-md p-1 transition-opacity hover:bg-black/10 focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none dark:hover:bg-white/15 {copied
+                ? 'opacity-100'
+                : 'opacity-0 group-hover:opacity-100 group-focus-within:opacity-100'}"
+              onclick={copyToClipboard}
+              aria-label="Copy {color.hex}"
+              title="Copy HEX"
+            >
+              {#if copied}
+                <Check class="size-4" aria-hidden="true" />
+              {:else}
+                <Copy class="size-4" aria-hidden="true" />
+              {/if}
+            </button>
           </div>
         </div>
         {#if showLabel}
           <button
             type="button"
             class="font-mono text-sm font-semibold tracking-wide uppercase focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
-            onclick={copyToClipboard}
+            onclick={handleSelect}
+            aria-pressed={selected}
+            aria-label="Edit {label}"
           >
-            {copied ? 'Copied!' : color.hex}
-            {#if locked}
+            {color.hex}
+            {#if selected}
+              <span class="mt-1 block text-[10px] font-medium tracking-wide uppercase opacity-80">
+                Editing
+              </span>
+            {:else if locked}
               <span class="mt-1 block text-[10px] font-medium tracking-wide uppercase opacity-80">
                 Locked
               </span>
@@ -132,6 +159,7 @@
   </Tooltip.Trigger>
   <Tooltip.Content class="block max-w-72 p-3" sideOffset={8}>
     <div class="space-y-2">
+      <p class="text-xs font-medium">{selected ? 'Selected for editing' : 'Click to edit'}</p>
       <div class="grid grid-cols-[2.5rem_1fr] gap-x-2 font-mono">
         <span class="opacity-70">HEX</span><span>{color.hex.toUpperCase()}</span>
         <span class="opacity-70">RGB</span><span>{color.rgb.r}, {color.rgb.g}, {color.rgb.b}</span>
@@ -143,7 +171,7 @@
       </div>
       {#if locked}
         <p class="border-background/20 border-t pt-2 text-xs">
-          Locked — stays fixed while you change the base color or randomize.
+          Locked — stays fixed while you change other colors or randomize.
         </p>
       {/if}
     </div>

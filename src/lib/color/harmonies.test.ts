@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { HARMONY_TYPES, type HSL, type HarmonyType } from '$lib/types';
-import { generatePalette, HARMONY_COLOR_COUNTS } from './harmonies';
+import { generatePalette, HARMONY_COLOR_COUNTS, inferBaseFromSwatch } from './harmonies';
 
 const base: HSL = { h: 350, s: 82, l: 46 };
 
@@ -111,4 +111,28 @@ describe('harmony algorithms', () => {
   it('covers every harmony type with a documented color count', () => {
     expect(Object.keys(HARMONY_COLOR_COUNTS).sort()).toEqual([...HARMONY_TYPES].sort());
   });
+
+  it.each(HARMONY_TYPES)(
+    'inferBaseFromSwatch round-trips unlocked %s swatches (within clamp tolerance)',
+    (harmony) => {
+      const seed: HSL = { h: 200, s: 65, l: 48 };
+      const palette = generatePalette(seed, harmony);
+
+      for (let index = 0; index < palette.length; index++) {
+        const target = palette[index].hsl;
+        const inferred = inferBaseFromSwatch(harmony, index, target);
+        const regenerated = generatePalette(inferred, harmony)[index].hsl;
+
+        if (harmony === 'monochromatic') {
+          // Mono only derives hue from the seed; S/L are fixed formula steps.
+          expect(regenerated.h).toBe(target.h);
+          continue;
+        }
+
+        expect(regenerated.h).toBe(target.h);
+        expect(regenerated.s).toBe(target.s);
+        expect(regenerated.l).toBe(target.l);
+      }
+    }
+  );
 });

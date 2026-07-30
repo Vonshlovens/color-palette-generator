@@ -1,6 +1,8 @@
 <script lang="ts">
   import { PaletteWorkspace, ThemeControl } from '$lib/components';
   import { Badge } from '$lib/components/ui/badge';
+  import { Button } from '$lib/components/ui/button';
+  import LayoutGrid from '@lucide/svelte/icons/layout-grid';
   import Palette from '@lucide/svelte/icons/palette';
   import type { PageProps } from './$types';
 
@@ -26,7 +28,13 @@
           <p class="text-muted-foreground hidden text-xs sm:block">Color harmony workspace</p>
         </div>
       </a>
-      <ThemeControl />
+      <div class="flex items-center gap-2">
+        <Button variant="ghost" size="sm" href="/palettes">
+          <LayoutGrid data-icon="inline-start" />
+          Gallery
+        </Button>
+        <ThemeControl />
+      </div>
     </div>
   </header>
 
@@ -46,6 +54,6 @@
 
   <footer class="text-muted-foreground border-t px-4 py-6 text-center text-xs">
     Saved <time datetime={data.palette.createdAt}>{data.palette.createdAt.slice(0, 10)} UTC</time> ·
-    Select any swatch to copy its HEX value.
+    Click a swatch to edit it, or use the copy control for its HEX value.
   </footer>
 </div>

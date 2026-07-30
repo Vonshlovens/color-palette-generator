@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { createPaletteSchema, paletteSlugSchema } from './validation';
+import { createPaletteSchema, listPalettesQuerySchema, paletteSlugSchema } from './validation';
 
 const validPalette = {
   name: 'Ocean Sunset',
@@ -68,4 +68,31 @@ describe('paletteSlugSchema', () => {
       expect(paletteSlugSchema.safeParse(slug).success).toBe(false);
     }
   );
+});
+
+describe('listPalettesQuerySchema', () => {
+  it('applies defaults when parameters are absent', () => {
+    expect(listPalettesQuerySchema.parse({})).toEqual({ limit: 24, offset: 0 });
+  });
+
+  it('coerces numeric strings from the query string', () => {
+    expect(listPalettesQuerySchema.parse({ limit: '10', offset: '30' })).toEqual({
+      limit: 10,
+      offset: 30
+    });
+  });
+
+  it.each([
+    ['limit', '0'],
+    ['limit', '51'],
+    ['limit', '-1'],
+    ['limit', '2.5'],
+    ['limit', 'abc'],
+    ['offset', '-1'],
+    ['offset', '10001'],
+    ['offset', '1.5'],
+    ['offset', 'abc']
+  ])('rejects invalid %s %o', (field, value) => {
+    expect(listPalettesQuerySchema.safeParse({ [field]: value }).success).toBe(false);
+  });
 });

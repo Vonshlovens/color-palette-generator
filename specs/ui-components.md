@@ -9,10 +9,10 @@
 │                                                         │
 │  ┌─────────────────┐  ┌───────────────────────────────┐ │
 │  │  Color Picker   │  │   Palette Display             │ │
-│  │  (HSL/HEX)      │  │   ┌───┐ ┌───┐ ┌───┐ ┌───┐ ┌───┐ │
+│  │  (selected)     │  │   ┌───┐ ┌───┐ ┌───┐ ┌───┐ ┌───┐ │
 │  │                 │  │   │ 1 │ │ 2 │ │ 3 │ │ 4 │ │ 5 │ │
 │  │  ┌───────────┐  │  │   └───┘ └───┘ └───┘ └───┘ └───┘ │
-│  │  │  Preview  │  │  │                               │ │
+│  │  │  Preview  │  │  │   Click swatch to edit         │ │
 │  │  └───────────┘  │  │   [Copy All]  [Export CSS]    │ │
 │  │                 │  │                               │ │
 │  │  [H] ████████   │  └───────────────────────────────┘ │
@@ -34,28 +34,30 @@
 ## Components
 
 ### 1. ColorPicker
-**Purpose:** Select the base color for palette generation
+**Purpose:** Edit the currently selected palette swatch
 
 **Features:**
 - Hue slider (0-360°)
 - Saturation slider (0-100%)
 - Lightness slider (0-100%)
 - HEX input field with validation
-- Live color preview swatch
-- Randomize base color (picks a new HSL base; palette remains algorithmic from that base)
+- Live color preview of the selected swatch
+- Randomize seed color (locked swatches stay put)
 
 **State:**
-- `hue: number` (0-360)
-- `saturation: number` (0-100)
-- `lightness: number` (0-100)
+- Bound to the store's `selectedIndex` / selected swatch HSL
 
 **Events:**
-- `onColorChange(hsl: HSL)` - Fires on any slider/input change
+- Updates the selected swatch via the palette store
 
 **Notes:**
+- Click a swatch in PaletteDisplay to choose which color the picker edits.
+- Unlocked edits retarget the canonical base HSL through the harmony inverse so siblings can follow.
+- Locked swatches are edited in place without changing the seed.
+- Lock other swatches first when you want to isolate a single color.
 - Generated palette colors are deterministic from the base HSL + harmony algorithm.
-- They are not random unless the user presses Randomize (which only randomizes the base).
-- Locked swatches stay fixed across base changes and randomize.
+- They are not random unless the user presses Randomize (which only randomizes the seed).
+- Locked swatches stay fixed across seed changes and randomize.
 
 ### 2. HarmonySelector
 **Purpose:** Choose the color harmony algorithm
@@ -78,8 +80,9 @@
 - Swatch count and grid layout follow the active harmony
 - Each swatch shows:
   - Color fill
-  - HEX code overlay (click to copy)
-  - Lock toggle to freeze that slot while the base color changes
+  - HEX code (click swatch to select for editing; use copy control for clipboard)
+  - Selection ring for the swatch currently in the color picker
+  - Lock toggle to freeze that slot while other colors change
   - Contrast indicator (light/dark text)
 - Hover state reveals full color info
 - For 60-30-10: proportional swatches plus an abstract website preview
@@ -88,9 +91,11 @@
 **State:**
 - `colors: Color[]`
 - `locks: Record<number, Color>`
+- `selectedIndex: number`
 - `copiedIndex: number | null` (for copy feedback)
 
 **Events:**
+- `onSelect(index: number)`
 - `onColorCopy(index: number)`
 - `onToggleLock(index: number)`
 
@@ -110,11 +115,14 @@
 - `size: 'small' | 'medium' | 'large'`
 - `showLabel: boolean`
 - `locked: boolean`
+- `selected: boolean`
+- `onSelect?: (index: number) => void`
 - `onToggleLock?: (index: number) => void`
 
 **Features:**
-- Click HEX / label to copy
-- Lock button freezes the slot against base/randomize updates
+- Click swatch to select it for editing in the color picker
+- Separate copy control for HEX clipboard
+- Lock button freezes the slot against seed/randomize updates
 - Tooltip with RGB/HSL values
 - Auto text color (black/white) based on luminance
 
@@ -159,6 +167,30 @@ colors: {
 **Persistence:**
 - Stores HSL channels and harmony type, not generated HEX/RGB output
 - Saving an edited shared palette always creates a new snapshot
+- Each save yields a `/palettes/:slug` share link and appears in the database-backed gallery
+
+### 7. PaletteCard (v3)
+**Purpose:** Compact preview of a saved snapshot in the gallery.
+
+**Props:**
+- `slug`, `name`, `hue`, `saturation`, `lightness`, `harmony`
+- `dateLabel: string` (pre-formatted, e.g. "Created 2026-07-28")
+
+**Features:**
+- Swatch strip recomputed client-side via `generatePalette` from the stored HSL + harmony
+- Harmony badge (`getHarmonyName`) and created date
+- Primary CTA "Open & edit" → `/palettes/:slug` (the workspace supports edit + save-as-new)
+- Secondary "Copy link" copies the public share URL
+
+### 8. Palette Gallery page (v3)
+**Purpose:** Browse database-backed snapshots at `/palettes`.
+
+**Features:**
+- Server-rendered first page (newest first) via `listPalettes`; "Load more" paginates through
+  `GET /api/palettes?limit=&offset=`
+- Empty state when no snapshots exist yet
+- Header matches the Palette Studio chrome with links back to the generator; the generator and
+  shared-palette headers link to the gallery
 
 ## Visual Design
 

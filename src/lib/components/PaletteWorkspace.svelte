@@ -27,7 +27,7 @@
 <section
   class="grid items-start gap-6 lg:grid-cols-[20rem_minmax(0,1fr)]"
   aria-label="Palette editor"
-  style:--workspace-accent={paletteStore.baseColor.hex}
+  style:--workspace-accent={paletteStore.selectedColor.hex}
 >
   <div class="space-y-6">
     <ColorPicker />
@@ -48,7 +48,8 @@
         <Card.Description class="max-w-2xl leading-relaxed">
           {getHarmonyDescription(paletteStore.harmony)}. The palette shows
           {paletteStore.colors.length} color{paletteStore.colors.length === 1 ? '' : 's'} that match
-          this relationship, keeping your selected base color in HSL while deriving supporting hues.
+          this relationship. Click any swatch to edit it; unlocked colors stay linked by the
+          harmony rule.
         </Card.Description>
       </Card.Header>
     </Card.Root>

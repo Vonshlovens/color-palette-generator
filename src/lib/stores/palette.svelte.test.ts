@@ -91,5 +91,57 @@ describe('createPaletteStore', () => {
       })
     ).toBe(true);
     expect(store.lockedCount).toBe(0);
+    expect(store.selectedIndex).toBe(0);
+  });
+
+  it('edits the selected swatch and retargets the base for unlocked colors', () => {
+    const store = createPaletteStore({
+      hue: 220,
+      saturation: 70,
+      lightness: 50,
+      harmony: '60-30-10'
+    });
+
+    store.selectColor(0);
+    expect(store.selectedIndex).toBe(0);
+
+    const dominant = store.colors[0].hsl;
+    store.setSelectedHue((dominant.h + 40) % 360);
+
+    expect(store.selectedColor.hsl.h).toBe((dominant.h + 40) % 360);
+    // Secondary shares the dominant hue family in 60-30-10
+    expect(store.colors[1].hsl.h).toBe(store.colors[0].hsl.h);
+  });
+
+  it('edits a locked swatch in place without moving unlocked siblings', () => {
+    const store = createPaletteStore({
+      hue: 220,
+      saturation: 70,
+      lightness: 50,
+      harmony: 'complementary'
+    });
+
+    const originalBaseHue = store.colors[0].hsl.h;
+    store.toggleLock(1);
+    store.selectColor(1);
+    store.setSelectedHue(40);
+
+    expect(store.colors[1].hsl.h).toBe(40);
+    expect(store.colors[0].hsl.h).toBe(originalBaseHue);
+  });
+
+  it('resets selection when harmony changes', () => {
+    const store = createPaletteStore({
+      hue: 200,
+      saturation: 70,
+      lightness: 50,
+      harmony: 'tetradic'
+    });
+
+    store.selectColor(3);
+    expect(store.selectedIndex).toBe(3);
+
+    store.setHarmony('complementary');
+    expect(store.selectedIndex).toBe(0);
   });
 });

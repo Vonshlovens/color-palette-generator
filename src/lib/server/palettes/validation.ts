@@ -13,4 +13,19 @@ export const createPaletteSchema = z
 
 export const paletteSlugSchema = z.string().regex(/^[A-Za-z0-9_-]{8,32}$/);
 
+export const PALETTE_LIST_MAX_LIMIT = 50;
+export const PALETTE_LIST_DEFAULT_LIMIT = 24;
+export const PALETTE_LIST_MAX_OFFSET = 10_000;
+
+export const listPalettesQuerySchema = z.object({
+  limit: z.coerce
+    .number()
+    .int()
+    .min(1)
+    .max(PALETTE_LIST_MAX_LIMIT)
+    .default(PALETTE_LIST_DEFAULT_LIMIT),
+  offset: z.coerce.number().int().min(0).max(PALETTE_LIST_MAX_OFFSET).default(0)
+});
+
 export type CreatePaletteInput = z.infer<typeof createPaletteSchema>;
+export type ListPalettesQuery = z.infer<typeof listPalettesQuerySchema>;

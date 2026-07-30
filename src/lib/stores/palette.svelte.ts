@@ -7,7 +7,7 @@ import {
   type PaletteState
 } from '$lib/types';
 import { createColor } from '$lib/color/conversions';
-import { generatePalette } from '$lib/color/harmonies';
+import { generatePalette, inferBaseFromSwatch } from '$lib/color/harmonies';
 import { getContext, hasContext, setContext } from 'svelte';
 
 const DEFAULT_STATE: PaletteState = {
@@ -23,10 +23,16 @@ function cloneColor(color: Color): Color {
   return createColor({ ...color.hsl });
 }
 
+function colorsEqual(a: Color, b: Color): boolean {
+  return a.hex === b.hex;
+}
+
 export class PaletteStore {
   #state = $state<PaletteState>({ ...DEFAULT_STATE });
   /** Locked palette slots keyed by index; locked colors stay fixed while the base changes. */
   #locks = $state<Record<number, Color>>({});
+  /** Which palette swatch the color picker is editing. */
+  #selectedIndex = $state(0);
 
   constructor(snapshot?: PaletteSnapshot) {
     if (snapshot) this.hydrate(snapshot);
@@ -68,6 +74,10 @@ export class PaletteStore {
     return Object.keys(this.#locks).length;
   }
 
+  get selectedIndex(): number {
+    return this.#selectedIndex;
+  }
+
   get colors(): Color[] {
     const generated = generatePalette(this.baseHsl, this.#state.harmony);
     return generated.map((color, index) =>
@@ -75,8 +85,74 @@ export class PaletteStore {
     );
   }
 
+  get selectedColor(): Color {
+    const colors = this.colors;
+    return colors[this.#selectedIndex] ?? colors[0] ?? this.baseColor;
+  }
+
   isLocked(index: number): boolean {
     return this.#locks[index] !== undefined;
+  }
+
+  selectColor(index: number): void {
+    if (!Number.isInteger(index) || index < 0) return;
+    if (index >= this.colors.length) return;
+    this.#selectedIndex = index;
+  }
+
+  /**
+   * Edit the selected swatch. Unlocked slots retarget the canonical base via the harmony
+   * inverse so siblings can follow; locked slots are updated in place.
+   */
+  setSelectedHsl(hsl: HSL): void {
+    const index = this.#selectedIndex;
+    if (index < 0 || index >= generatePalette(this.baseHsl, this.#state.harmony).length) return;
+
+    const next = createColor({
+      h: Math.max(0, Math.min(360, hsl.h)),
+      s: Math.max(0, Math.min(100, hsl.s)),
+      l: Math.max(0, Math.min(100, hsl.l))
+    });
+
+    if (this.isLocked(index)) {
+      this.#locks = { ...this.#locks, [index]: next };
+      return;
+    }
+
+    const inferred = inferBaseFromSwatch(this.#state.harmony, index, next.hsl);
+    this.#state.hue = inferred.h;
+    this.#state.saturation = inferred.s;
+    this.#state.lightness = inferred.l;
+
+    // Pin exact channel values when the forward harmony can't reproduce them (e.g. mono S/L).
+    const generated = generatePalette(this.baseHsl, this.#state.harmony)[index];
+    if (generated && !colorsEqual(generated, next)) {
+      this.#locks = { ...this.#locks, [index]: next };
+    }
+  }
+
+  setSelectedHue(value: number): void {
+    if (!Number.isFinite(value)) return;
+    this.setSelectedHsl({
+      ...this.selectedColor.hsl,
+      h: Math.max(0, Math.min(360, value))
+    });
+  }
+
+  setSelectedSaturation(value: number): void {
+    if (!Number.isFinite(value)) return;
+    this.setSelectedHsl({
+      ...this.selectedColor.hsl,
+      s: Math.max(0, Math.min(100, value))
+    });
+  }
+
+  setSelectedLightness(value: number): void {
+    if (!Number.isFinite(value)) return;
+    this.setSelectedHsl({
+      ...this.selectedColor.hsl,
+      l: Math.max(0, Math.min(100, value))
+    });
   }
 
   toggleLock(index: number): void {
@@ -116,6 +192,7 @@ export class PaletteStore {
     this.#state.harmony = value;
     // Drop locks when the relationship changes so a previous mode can't freeze the new palette.
     this.clearLocks();
+    this.#selectedIndex = 0;
   }
 
   setHsl(hsl: HSL): void {
@@ -151,6 +228,7 @@ export class PaletteStore {
 
     this.#state = { ...snapshot };
     this.clearLocks();
+    this.#selectedIndex = 0;
     return true;
   }
 

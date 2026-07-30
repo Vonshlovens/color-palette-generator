@@ -1,5 +1,5 @@
 import { randomBytes, randomUUID } from 'node:crypto';
-import { eq } from 'drizzle-orm';
+import { desc, eq } from 'drizzle-orm';
 import type { LibSQLDatabase } from 'drizzle-orm/libsql';
 import { db, schema } from '$lib/server/db';
 import { palettes, type PaletteRecord } from '$lib/server/db/schema';
@@ -39,6 +39,33 @@ export async function createPalette(
   }
 
   throw new Error('Unable to allocate a unique palette identifier');
+}
+
+export interface ListPalettesOptions {
+  limit: number;
+  offset: number;
+}
+
+export interface ListPalettesResult {
+  palettes: PaletteRecord[];
+  hasMore: boolean;
+}
+
+export async function listPalettes(
+  { limit, offset }: ListPalettesOptions,
+  database: PaletteDatabase = db
+): Promise<ListPalettesResult> {
+  // Fetch one extra row to determine whether another page exists.
+  const rows = await database.query.palettes.findMany({
+    orderBy: [desc(palettes.createdAt), desc(palettes.id)],
+    limit: limit + 1,
+    offset
+  });
+
+  return {
+    palettes: rows.slice(0, limit),
+    hasMore: rows.length > limit
+  };
 }
 
 export async function getPaletteBySlug(

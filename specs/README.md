@@ -28,10 +28,13 @@ A visual tool for generating harmonious color palettes using color theory algori
 ## User Flow
 
 ```
-Select Base Color → Choose Harmony Type → Generate Palette → Export/Copy
-       ↓                    ↓                    ↓               ↓
-  Color Picker        Dropdown/Tabs         Live Preview    HEX/RGB/CSS
+Select Swatch → Adjust Color → Choose Harmony → Export/Copy/Save
+       ↓              ↓              ↓               ↓
+  Click palette    HSL / HEX     Dropdown/Tabs    HEX/RGB/CSS
 ```
+
+Unlocked swatch edits retarget the canonical base through the harmony inverse. Lock siblings
+to keep them fixed while editing one role.
 
 ## Saved Palettes (v2)
 
@@ -40,7 +43,16 @@ Select Base Color → Choose Harmony Type → Generate Palette → Export/Copy
 - Generated RGB/HEX arrays are recalculated from the canonical inputs and are never persisted.
 - Shared routes hydrate the browser palette workspace and can be edited locally, then saved as a
   new snapshot. Existing snapshots are never updated or deleted.
+- After save, the app navigates to `/palettes/:slug` (the public share link).
 - No account or ownership model is implied; share links are public.
+
+### Gallery (v3)
+
+- `/palettes` is a gallery of database-backed snapshots (Turso or local SQLite), newest first,
+  server-rendered with paginated "load more" via `GET /api/palettes`.
+- Each gallery card previews the palette (recomputed client-side from the stored HSL + harmony),
+  links to `/palettes/:slug` to open the snapshot in the editor, and offers a copy-share-link
+  action. Editing a snapshot and saving always creates a new snapshot.
 
 ## Out of Scope
 - Gradient generation

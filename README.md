@@ -12,6 +12,7 @@ A visual tool for generating harmonious color palettes using color theory algori
 - **One-Click Copy**: Click any swatch to copy its HEX value
 - **Export Options**: CSS variables, Tailwind config, or JSON
 - **Saved Palettes (v2)**: Create immutable snapshots with public share links
+- **Gallery (v3)**: Browse database-backed saved palettes at `/palettes`
 
 ## Tech Stack
 
@@ -131,6 +132,7 @@ Saved snapshots persist only their name, HSL generator inputs, harmony type, pub
 timestamps. Generated HEX/RGB colors are always derived at runtime. The public API is:
 
 - `POST /api/palettes` — create a new immutable snapshot
+- `GET /api/palettes` — list public snapshots, newest first (`limit` ≤ 50, `offset` pagination)
 - `GET /api/palettes/:slug` — retrieve a public snapshot
 - `GET /health` — report application and database availability
 

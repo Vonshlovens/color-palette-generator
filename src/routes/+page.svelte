@@ -1,6 +1,8 @@
 <script lang="ts">
   import { PaletteWorkspace, ThemeControl } from '$lib/components';
   import { Badge } from '$lib/components/ui/badge';
+  import { Button } from '$lib/components/ui/button';
+  import LayoutGrid from '@lucide/svelte/icons/layout-grid';
   import Palette from '@lucide/svelte/icons/palette';
 </script>
 
@@ -26,7 +28,13 @@
           <p class="text-muted-foreground hidden text-xs sm:block">Color harmony workspace</p>
         </div>
       </div>
-      <ThemeControl />
+      <div class="flex items-center gap-2">
+        <Button variant="ghost" size="sm" href="/palettes">
+          <LayoutGrid data-icon="inline-start" />
+          Gallery
+        </Button>
+        <ThemeControl />
+      </div>
     </div>
   </header>
 
@@ -47,6 +55,6 @@
   </main>
 
   <footer class="text-muted-foreground border-t px-4 py-6 text-center text-xs">
-    Select any color swatch to copy its HEX value.
+    Select a swatch to edit it, or use the copy control for its HEX value.
   </footer>
 </div>

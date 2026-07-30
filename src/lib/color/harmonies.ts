@@ -147,6 +147,57 @@ function generateSixtyThirtyTen(base: HSL): Color[] {
 }
 
 /**
+ * Infer the canonical base HSL that would place `target` at `index` for the given harmony.
+ * Used when the user edits a selected swatch so the generator seed stays in sync.
+ */
+export function inferBaseFromSwatch(harmony: HarmonyType, index: number, target: HSL): HSL {
+  const { h, s, l } = target;
+
+  switch (harmony) {
+    case 'complementary':
+      return index === 1 ? { h: normalizeHue(h - 180), s, l } : { h, s, l };
+    case 'analogous':
+      if (index === 0) return { h: normalizeHue(h + 30), s, l };
+      if (index === 2) return { h: normalizeHue(h - 30), s, l };
+      return { h, s, l };
+    case 'triadic':
+      if (index === 1) return { h: normalizeHue(h - 120), s, l };
+      if (index === 2) return { h: normalizeHue(h - 240), s, l };
+      return { h, s, l };
+    case 'split-complementary':
+      if (index === 1) return { h: normalizeHue(h - 150), s, l };
+      if (index === 2) return { h: normalizeHue(h - 210), s, l };
+      return { h, s, l };
+    case 'tetradic':
+      if (index === 1) return { h: normalizeHue(h - 60), s, l };
+      if (index === 2) return { h: normalizeHue(h - 180), s, l };
+      if (index === 3) return { h: normalizeHue(h - 240), s, l };
+      return { h, s, l };
+    case 'monochromatic':
+      // Generator uses hue only; keep the edited S/L on the snapshot for save/share.
+      return { h, s, l };
+    case '60-30-10':
+      if (index === 0) {
+        return { h, s: clamp(s + 15, 0, 100), l: clamp(l - 22, 0, 100) };
+      }
+      if (index === 1) {
+        return { h, s: clamp(s + 5, 0, 100), l: clamp(l + 22, 0, 100) };
+      }
+      return { h: normalizeHue(h - 180), s: clamp(s - 10, 0, 100), l };
+    default:
+      return { h, s, l };
+  }
+}
+
+/** Human-readable label for a palette slot (roles for 60-30-10, otherwise Color N). */
+export function getSwatchLabel(harmony: HarmonyType, index: number): string {
+  if (harmony === '60-30-10') {
+    return SIXTY_THIRTY_TEN_ROLES[index] ?? `Color ${index + 1}`;
+  }
+  return `Color ${index + 1}`;
+}
+
+/**
  * Get display name for harmony type
  */
 export function getHarmonyName(harmony: HarmonyType): string {

@@ -2,6 +2,7 @@
   import { goto } from '$app/navigation';
   import { getPaletteStoreContext } from '$lib/stores/palette.svelte';
   import { getHarmonyName } from '$lib/color/harmonies';
+  import type { SavedPalette } from '$lib/types';
   import { Button } from '$lib/components/ui/button';
   import * as Dialog from '$lib/components/ui/dialog';
   import { Input } from '$lib/components/ui/input';
@@ -46,7 +47,7 @@
         body: JSON.stringify({ name: trimmedName, ...paletteStore.snapshot() })
       });
       const body = (await response.json()) as {
-        palette?: { slug?: string };
+        palette?: SavedPalette;
         error?: { message?: string };
       };
 
