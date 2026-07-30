@@ -1,0 +1,7 @@
+{
+  "database": "dolt",
+  "backend": "dolt",
+  "dolt_mode": "server",
+  "dolt_database": "color_palette_generator",
+  "project_id": "730f094a-78fe-4d46-9506-879bc762d9fe"
+}
