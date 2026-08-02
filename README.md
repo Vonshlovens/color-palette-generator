@@ -128,6 +128,41 @@ Docker and Compose health checks call `/health` with Bun itself; the endpoint ve
 and database and returns HTTP 503 when the database is unavailable. Inspect status with
 `docker compose ps` and logs with `docker compose logs app`.
 
+### Cloudflare Tunnel
+
+The optional `cloudflared` service is a remotely-managed Cloudflare Tunnel connector. It remains
+disabled unless the `tunnel` Compose profile is enabled, so ordinary local self-hosting does not
+require Cloudflare credentials. Keep the app bound to loopback; `cloudflared` reaches it directly
+over the private Compose network as `http://app:3000`.
+
+For the current `ctrl` deployment, release, DNS, security, and optional Cloudflare Access setup,
+see [the operational deployment guide](docs/ctrl-deployment.md).
+
+After creating a remotely-managed tunnel in the Cloudflare dashboard, add its connector token and
+the public URL to the deployment `.env` file (which is ignored by Git):
+
+```dotenv
+ORIGIN=https://colors.vonshlovens.com
+TUNNEL_TOKEN=eyJ...
+```
+
+Restrict the file and start both services:
+
+```bash
+chmod 600 .env
+docker compose --profile tunnel up --build -d
+docker compose ps
+docker compose logs -f cloudflared
+```
+
+In the tunnel's public-hostname route, map `colors.vonshlovens.com` to
+`http://app:3000`. Cloudflare creates the DNS record automatically when the `vonshlovens.com`
+zone is active in the same Cloudflare account. Verify the published application with:
+
+```bash
+curl --fail https://colors.vonshlovens.com/health
+```
+
 Saved snapshots persist only their name, HSL generator inputs, harmony type, public slug, and
 timestamps. Generated HEX/RGB colors are always derived at runtime. The public API is:
 
