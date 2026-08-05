@@ -13,13 +13,15 @@ describe('createPaletteStore', () => {
       hue: 42,
       saturation: 70,
       lightness: 50,
-      harmony: 'triadic'
+      harmony: 'triadic',
+      lockedSwatches: []
     });
     expect(second.snapshot()).toEqual({
       hue: 220,
       saturation: 70,
       lightness: 50,
-      harmony: 'complementary'
+      harmony: 'complementary',
+      lockedSwatches: []
     });
   });
 
@@ -35,7 +37,8 @@ describe('createPaletteStore', () => {
       hue: 15,
       saturation: 80,
       lightness: 35,
-      harmony: 'analogous'
+      harmony: 'analogous',
+      lockedSwatches: []
     });
     expect(store.colors).toHaveLength(3);
   });
@@ -128,6 +131,41 @@ describe('createPaletteStore', () => {
 
     expect(store.colors[1].hsl.h).toBe(40);
     expect(store.colors[0].hsl.h).toBe(originalBaseHue);
+  });
+
+  it('includes locked HSL overrides in a snapshot so saved palettes reproduce every swatch', () => {
+    const store = createPaletteStore({
+      hue: 220,
+      saturation: 70,
+      lightness: 50,
+      harmony: '60-30-10'
+    });
+
+    store.toggleLock(0);
+    store.selectColor(0);
+    store.setSelectedHsl({ h: 25, s: 90, l: 96 });
+
+    const snapshot = store.snapshot();
+    const hydrated = createPaletteStore(snapshot);
+
+    expect(snapshot.lockedSwatches).toEqual([{ index: 0, h: 25, s: 90, l: 96 }]);
+    expect(hydrated.colors.map((color) => color.hex)).toEqual(store.colors.map((color) => color.hex));
+    expect(hydrated.isLocked(0)).toBe(true);
+  });
+
+  it('preserves automatic 60-30-10 edge overrides through a snapshot', () => {
+    const store = createPaletteStore({
+      hue: 220,
+      saturation: 70,
+      lightness: 50,
+      harmony: '60-30-10'
+    });
+
+    store.setSelectedHsl({ h: 25, s: 90, l: 100 });
+    const hydrated = createPaletteStore(store.snapshot());
+
+    expect(store.isLocked(0)).toBe(true);
+    expect(hydrated.colors.map((color) => color.hex)).toEqual(store.colors.map((color) => color.hex));
   });
 
   it('resets selection when harmony changes', () => {

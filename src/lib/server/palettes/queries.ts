@@ -29,6 +29,7 @@ export async function createPalette(
         saturation: input.saturation,
         lightness: input.lightness,
         harmony: input.harmony,
+        lockedSwatches: input.lockedSwatches,
         createdAt: now,
         updatedAt: now
       })

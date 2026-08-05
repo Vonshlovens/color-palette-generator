@@ -1,6 +1,6 @@
 import { sql } from 'drizzle-orm';
 import { check, index, integer, real, sqliteTable, text, uniqueIndex } from 'drizzle-orm/sqlite-core';
-import { HARMONY_TYPES, type HarmonyType } from '$lib/types';
+import { HARMONY_TYPES, type HarmonyType, type LockedSwatch } from '$lib/types';
 
 export const palettes = sqliteTable(
   'palettes',
@@ -12,6 +12,10 @@ export const palettes = sqliteTable(
     saturation: real('saturation').notNull(),
     lightness: real('lightness').notNull(),
     harmony: text('harmony', { enum: HARMONY_TYPES }).$type<HarmonyType>().notNull(),
+    lockedSwatches: text('locked_swatches', { mode: 'json' })
+      .$type<LockedSwatch[]>()
+      .notNull()
+      .default([]),
     createdAt: integer('created_at', { mode: 'timestamp_ms' })
       .notNull()
       .default(sql`(unixepoch() * 1000)`),

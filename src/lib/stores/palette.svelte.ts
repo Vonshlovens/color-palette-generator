@@ -3,6 +3,7 @@ import {
   type HSL,
   type Color,
   type HarmonyType,
+  type LockedSwatch,
   type PaletteSnapshot,
   type PaletteState
 } from '$lib/types';
@@ -25,6 +26,26 @@ function cloneColor(color: Color): Color {
 
 function colorsEqual(a: Color, b: Color): boolean {
   return a.hex === b.hex;
+}
+
+function isValidLockedSwatch(
+  lockedSwatch: LockedSwatch,
+  colorCount: number
+): lockedSwatch is LockedSwatch {
+  return (
+    Number.isInteger(lockedSwatch.index) &&
+    lockedSwatch.index >= 0 &&
+    lockedSwatch.index < colorCount &&
+    Number.isFinite(lockedSwatch.h) &&
+    lockedSwatch.h >= 0 &&
+    lockedSwatch.h <= 360 &&
+    Number.isFinite(lockedSwatch.s) &&
+    lockedSwatch.s >= 0 &&
+    lockedSwatch.s <= 100 &&
+    Number.isFinite(lockedSwatch.l) &&
+    lockedSwatch.l >= 0 &&
+    lockedSwatch.l <= 100
+  );
 }
 
 export class PaletteStore {
@@ -202,15 +223,27 @@ export class PaletteStore {
   }
 
   snapshot(): PaletteSnapshot {
+    const lockedSwatches = Object.entries(this.#locks)
+      .map(([index, color]) => ({ index: Number(index), ...color.hsl }))
+      .sort((a, b) => a.index - b.index);
+
     return Object.freeze({
       hue: this.#state.hue,
       saturation: this.#state.saturation,
       lightness: this.#state.lightness,
-      harmony: this.#state.harmony
+      harmony: this.#state.harmony,
+      lockedSwatches
     });
   }
 
   hydrate(snapshot: PaletteSnapshot): boolean {
+    const lockedSwatches = snapshot.lockedSwatches ?? [];
+    const colorCount = generatePalette(
+      { h: snapshot.hue, s: snapshot.saturation, l: snapshot.lightness },
+      snapshot.harmony
+    ).length;
+    const lockedIndexes = new Set<number>();
+
     if (
       !Number.isFinite(snapshot.hue) ||
       snapshot.hue < 0 ||
@@ -221,13 +254,30 @@ export class PaletteStore {
       !Number.isFinite(snapshot.lightness) ||
       snapshot.lightness < 0 ||
       snapshot.lightness > 100 ||
-      !HARMONY_TYPES.includes(snapshot.harmony)
+      !HARMONY_TYPES.includes(snapshot.harmony) ||
+      !Array.isArray(lockedSwatches) ||
+      lockedSwatches.some(
+        (lockedSwatch) =>
+          !isValidLockedSwatch(lockedSwatch, colorCount) ||
+          lockedIndexes.has(lockedSwatch.index) ||
+          (lockedIndexes.add(lockedSwatch.index), false)
+      )
     ) {
       return false;
     }
 
-    this.#state = { ...snapshot };
-    this.clearLocks();
+    this.#state = {
+      hue: snapshot.hue,
+      saturation: snapshot.saturation,
+      lightness: snapshot.lightness,
+      harmony: snapshot.harmony
+    };
+    this.#locks = Object.fromEntries(
+      lockedSwatches.map((lockedSwatch) => [
+        lockedSwatch.index,
+        createColor({ h: lockedSwatch.h, s: lockedSwatch.s, l: lockedSwatch.l })
+      ])
+    );
     this.#selectedIndex = 0;
     return true;
   }

@@ -35,6 +35,10 @@
 
   let copied = $state(false);
 
+  function formatHslChannel(value: number): string {
+    return Number.isInteger(value) ? String(value) : value.toFixed(1);
+  }
+
   async function copyToClipboard(event: MouseEvent) {
     event.preventDefault();
     event.stopPropagation();
@@ -86,23 +90,26 @@
             : ''}"
         style="background-color: {color.hex}; color: {foreground}"
       >
-        <div class="flex w-full items-start justify-between gap-2 text-xs font-medium opacity-90">
-          <button
-            type="button"
-            class="min-w-0 flex-1 rounded-md text-left focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
-            onclick={handleSelect}
-            aria-pressed={selected}
-            aria-label="Edit {label}, {color.hex}"
-          >
+        <button
+          type="button"
+          class="absolute inset-0 cursor-pointer rounded-xl focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
+          onclick={handleSelect}
+          aria-pressed={selected}
+          aria-label="Edit {label}, {color.hex}"
+        ></button>
+
+        <div class="pointer-events-none relative z-10 flex w-full items-start justify-between gap-2 text-xs font-medium opacity-90">
+          <div class="min-w-0 flex-1">
             <span class="block truncate">{roleLabel ?? `0${index + 1}`}</span>
-          </button>
-          <div class="flex shrink-0 items-center gap-1">
+            <span class="mt-1 block text-[10px] font-medium tracking-wide uppercase opacity-80">
+              {selected ? 'Editing' : locked ? 'Locked' : 'Click to edit'}
+            </span>
+          </div>
+          <div class="pointer-events-auto flex shrink-0 items-center gap-1">
             {#if onToggleLock}
               <button
                 type="button"
-                class="rounded-md p-1 transition-opacity hover:bg-black/10 focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none dark:hover:bg-white/15 {locked
-                  ? 'opacity-100'
-                  : 'opacity-0 group-hover:opacity-100 group-focus-within:opacity-100'}"
+                class="inline-flex min-h-8 min-w-8 items-center justify-center rounded-md p-1 transition-colors hover:bg-black/10 focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none dark:hover:bg-white/15"
                 onclick={handleLockClick}
                 aria-pressed={locked}
                 aria-label={locked
@@ -119,9 +126,7 @@
             {/if}
             <button
               type="button"
-              class="rounded-md p-1 transition-opacity hover:bg-black/10 focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none dark:hover:bg-white/15 {copied
-                ? 'opacity-100'
-                : 'opacity-0 group-hover:opacity-100 group-focus-within:opacity-100'}"
+              class="inline-flex min-h-8 min-w-8 items-center justify-center rounded-md p-1 transition-colors hover:bg-black/10 focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none dark:hover:bg-white/15"
               onclick={copyToClipboard}
               aria-label="Copy {color.hex}"
               title="Copy HEX"
@@ -135,24 +140,9 @@
           </div>
         </div>
         {#if showLabel}
-          <button
-            type="button"
-            class="font-mono text-sm font-semibold tracking-wide uppercase focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
-            onclick={handleSelect}
-            aria-pressed={selected}
-            aria-label="Edit {label}"
-          >
+          <div class="pointer-events-none relative z-10 font-mono text-sm font-semibold tracking-wide uppercase">
             {color.hex}
-            {#if selected}
-              <span class="mt-1 block text-[10px] font-medium tracking-wide uppercase opacity-80">
-                Editing
-              </span>
-            {:else if locked}
-              <span class="mt-1 block text-[10px] font-medium tracking-wide uppercase opacity-80">
-                Locked
-              </span>
-            {/if}
-          </button>
+          </div>
         {/if}
       </div>
     {/snippet}
@@ -163,7 +153,12 @@
       <div class="grid grid-cols-[2.5rem_1fr] gap-x-2 font-mono">
         <span class="opacity-70">HEX</span><span>{color.hex.toUpperCase()}</span>
         <span class="opacity-70">RGB</span><span>{color.rgb.r}, {color.rgb.g}, {color.rgb.b}</span>
-        <span class="opacity-70">HSL</span><span>{color.hsl.h}°, {color.hsl.s}%, {color.hsl.l}%</span>
+        <span class="opacity-70">HSL</span
+        ><span
+          >{formatHslChannel(color.hsl.h)}°, {formatHslChannel(color.hsl.s)}%, {formatHslChannel(
+            color.hsl.l
+          )}%</span
+        >
       </div>
       <div class="border-background/20 flex gap-3 border-t pt-2">
         <span>White {whiteContrast.toFixed(2)}:1</span>

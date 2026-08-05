@@ -9,6 +9,7 @@ export function toSavedPalette(record: PaletteRecord): SavedPalette {
     saturation: record.saturation,
     lightness: record.lightness,
     harmony: record.harmony,
+    lockedSwatches: record.lockedSwatches,
     createdAt: record.createdAt.toISOString(),
     updatedAt: record.updatedAt.toISOString()
   };

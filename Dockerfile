@@ -22,14 +22,6 @@ COPY package.json bun.lock ./
 RUN bun install --frozen-lockfile --production
 
 
-FROM oven/bun:1.3.14-debian AS server-dependencies
-
-WORKDIR /app/build
-COPY --from=builder /app/build/package.json ./
-COPY bun.lock ./
-RUN bun install --production
-
-
 FROM oven/bun:1.3.14-debian AS runtime
 
 ENV NODE_ENV=production \
@@ -42,7 +34,10 @@ WORKDIR /app
 RUN mkdir -p /data && chown bun:bun /data
 
 COPY --from=builder --chown=bun:bun /app/build ./build
-COPY --from=server-dependencies --chown=bun:bun /app/build/node_modules ./build/node_modules
+# svelte-adapter-bun's generated package omits @sveltejs/kit even though the
+# built server imports it. Reuse the lockfile-verified build dependencies so
+# the runtime has every external module used by the generated server.
+COPY --from=build-dependencies --chown=bun:bun /app/node_modules ./build/node_modules
 COPY --from=migration-dependencies --chown=bun:bun /app/node_modules ./node_modules
 COPY --chown=bun:bun drizzle ./drizzle
 COPY --chown=bun:bun scripts/migrate.ts ./scripts/migrate.ts
