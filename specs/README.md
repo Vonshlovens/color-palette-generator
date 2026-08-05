@@ -39,8 +39,9 @@ to keep them fixed while editing one role.
 ## Saved Palettes (v2)
 
 - A user can name and save the current generator state as an immutable public snapshot.
-- A snapshot stores only canonical HSL values, harmony type, name, slug, and timestamps.
-- Generated RGB/HEX arrays are recalculated from the canonical inputs and are never persisted.
+- A snapshot stores canonical base HSL values, any locked swatch HSL overrides, harmony type, name,
+  slug, and timestamps.
+- Generated RGB/HEX arrays are recalculated from those canonical HSL values and are never persisted.
 - Shared routes hydrate the browser palette workspace and can be edited locally, then saved as a
   new snapshot. Existing snapshots are never updated or deleted.
 - After save, the app navigates to `/palettes/:slug` (the public share link).

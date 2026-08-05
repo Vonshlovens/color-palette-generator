@@ -82,8 +82,8 @@
   <Card.Header class="border-b">
     <Card.Title>Edit {selectedLabel}</Card.Title>
     <Card.Description>
-      Click a swatch to select it, then adjust HSL or enter a HEX or RGB value. Lock other swatches
-      to keep them fixed.
+      Click a swatch to select it, then adjust HSL or enter a HEX or RGB value. A lock freezes that
+      swatch while other colors change; unlock it to link it to the harmony again.
     </Card.Description>
   </Card.Header>
 

@@ -15,6 +15,13 @@
       "when": 1785259864778,
       "tag": "0001_illegal_thor_girl",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1785921230657,
+      "tag": "0002_brief_raza",
+      "breakpoints": true
     }
   ]
 }

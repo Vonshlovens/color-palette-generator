@@ -163,8 +163,9 @@ zone is active in the same Cloudflare account. Verify the published application 
 curl --fail https://colors.vonshlovens.com/health
 ```
 
-Saved snapshots persist only their name, HSL generator inputs, harmony type, public slug, and
-timestamps. Generated HEX/RGB colors are always derived at runtime. The public API is:
+Saved snapshots persist their name, base HSL generator inputs, any locked swatch HSL overrides,
+harmony type, public slug, and timestamps. Generated HEX/RGB colors are always derived at runtime.
+The public API is:
 
 - `POST /api/palettes` — create a new immutable snapshot
 - `GET /api/palettes` — list public snapshots, newest first (`limit` ≤ 50, `offset` pagination)

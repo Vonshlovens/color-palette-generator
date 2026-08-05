@@ -80,10 +80,10 @@
 **Features:**
 - Swatch count and grid layout follow the active harmony
 - Each swatch shows:
-  - Color fill
-  - HEX code (click swatch to select for editing; use copy control for clipboard)
+  - Color fill (the full swatch surface selects it for editing)
+  - HEX code (use the separate copy control for clipboard)
   - Selection ring for the swatch currently in the color picker
-  - Lock toggle to freeze that slot while other colors change
+  - Always-visible lock toggle to freeze that slot while other colors change
   - Contrast indicator (light/dark text)
 - Hover state reveals full color info
 - For 60-30-10: proportional swatches plus an abstract website preview
@@ -121,9 +121,10 @@
 - `onToggleLock?: (index: number) => void`
 
 **Features:**
-- Click swatch to select it for editing in the color picker
+- Click anywhere on the swatch to select it for editing in the color picker
 - Separate copy control for HEX clipboard
-- Lock button freezes the slot against seed/randomize updates
+- Always-visible lock button freezes the slot against seed/randomize updates; unlock it to let the
+  harmony relationship control the slot again
 - Tooltip with RGB/HSL values
 - Auto text color (black/white) based on luminance
 

@@ -19,10 +19,12 @@
   const paletteStore = getPaletteStoreContext();
   let allCopied = $state(false);
 
-  const layoutClass = $derived(
-    getHarmonyLayoutClass(paletteStore.harmony, paletteStore.colors.length)
-  );
   const isSixtyThirtyTen = $derived(paletteStore.harmony === '60-30-10');
+  const layoutClass = $derived(
+    isSixtyThirtyTen
+      ? 'grid grid-cols-1 gap-3 sm:grid-cols-[minmax(0,6fr)_minmax(0,3fr)_minmax(7rem,1fr)]'
+      : getHarmonyLayoutClass(paletteStore.harmony, paletteStore.colors.length)
+  );
 
   async function copyAllHex() {
     const hexValues = paletteStore.colors.map(c => c.hex).join('\n');
@@ -42,10 +44,11 @@
       <Card.Title>Generated palette</Card.Title>
       <Card.Description>
         {#if isSixtyThirtyTen}
-          Click a role to edit it. Lock any swatch to keep it fixed while you tweak others.
+          Click anywhere on a role to edit it. Its lock button freezes that role while you tweak
+          the others or randomize.
         {:else}
-          Click a swatch to edit it. {paletteStore.colors.length} colors for this harmony — lock any
-          to keep it fixed.
+          Click anywhere on a swatch to edit it. Its lock button freezes it while you tweak the
+          other colors or randomize.
         {/if}
       </Card.Description>
     </div>
