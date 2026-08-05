@@ -1,6 +1,6 @@
 <script lang="ts">
-  import { generatePalette, getHarmonyName } from '$lib/color/harmonies';
-  import type { HarmonyType } from '$lib/types';
+  import { generateSnapshotPalette, getHarmonyName } from '$lib/color/harmonies';
+  import type { HarmonyType, LockedSwatch } from '$lib/types';
   import { Badge } from '$lib/components/ui/badge';
   import { Button } from '$lib/components/ui/button';
   import * as Card from '$lib/components/ui/card';
@@ -15,13 +15,16 @@
     saturation: number;
     lightness: number;
     harmony: HarmonyType;
+    lockedSwatches?: readonly LockedSwatch[];
     /** Pre-formatted date line, e.g. "Created 2026-07-28". */
     dateLabel: string;
   }
 
-  let { slug, name, hue, saturation, lightness, harmony, dateLabel }: Props = $props();
+  let { slug, name, hue, saturation, lightness, harmony, lockedSwatches, dateLabel }: Props = $props();
 
-  const colors = $derived(generatePalette({ h: hue, s: saturation, l: lightness }, harmony));
+  const colors = $derived(
+    generateSnapshotPalette({ hue, saturation, lightness, harmony, lockedSwatches })
+  );
   let copied = $state(false);
 
   async function copyShareLink() {
@@ -37,7 +40,7 @@
 
 <Card.Root size="sm" class="pt-0">
   <div class="flex h-16" role="img" aria-label="Preview of {name}">
-    {#each colors as color (color.hex)}
+    {#each colors as color, index (index)}
       <span class="flex-1" style="background-color: {color.hex}" title={color.hex}></span>
     {/each}
   </div>

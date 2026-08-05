@@ -179,7 +179,8 @@ colors: {
 - `dateLabel: string` (pre-formatted, e.g. "Created 2026-07-28")
 
 **Features:**
-- Swatch strip recomputed client-side via `generatePalette` from the stored HSL + harmony
+- Swatch strip recomputed client-side from the stored base HSL + harmony, then applies each saved
+  locked-swatch HSL override so the preview matches the snapshot editor
 - Harmony badge (`getHarmonyName`) and created date
 - Primary CTA "Open & edit" → `/palettes/:slug` (the workspace supports edit + save-as-new)
 - Secondary "Copy link" copies the public share URL
