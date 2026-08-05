@@ -91,9 +91,11 @@ export function rgbToHsl(rgb: RGB): HSL {
   }
 
   return {
-    h: Math.round(h * 360),
-    s: Math.round(s * 100),
-    l: Math.round(l * 100)
+    // Keep HSL as the canonical representation without quantizing it. This lets an RGB value
+    // entered in the picker round-trip to its original RGB channels.
+    h: h * 360,
+    s: s * 100,
+    l: l * 100
   };
 }
 

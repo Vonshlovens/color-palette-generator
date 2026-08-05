@@ -35,6 +35,10 @@
 
   let copied = $state(false);
 
+  function formatHslChannel(value: number): string {
+    return Number.isInteger(value) ? String(value) : value.toFixed(1);
+  }
+
   async function copyToClipboard(event: MouseEvent) {
     event.preventDefault();
     event.stopPropagation();
@@ -163,7 +167,12 @@
       <div class="grid grid-cols-[2.5rem_1fr] gap-x-2 font-mono">
         <span class="opacity-70">HEX</span><span>{color.hex.toUpperCase()}</span>
         <span class="opacity-70">RGB</span><span>{color.rgb.r}, {color.rgb.g}, {color.rgb.b}</span>
-        <span class="opacity-70">HSL</span><span>{color.hsl.h}°, {color.hsl.s}%, {color.hsl.l}%</span>
+        <span class="opacity-70">HSL</span
+        ><span
+          >{formatHslChannel(color.hsl.h)}°, {formatHslChannel(color.hsl.s)}%, {formatHslChannel(
+            color.hsl.l
+          )}%</span
+        >
       </div>
       <div class="border-background/20 flex gap-3 border-t pt-2">
         <span>White {whiteContrast.toFixed(2)}:1</span>

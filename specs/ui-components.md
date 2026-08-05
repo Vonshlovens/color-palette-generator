@@ -41,6 +41,7 @@
 - Saturation slider (0-100%)
 - Lightness slider (0-100%)
 - HEX input field with validation
+- RGB channel inputs (0-255) with validation
 - Live color preview of the selected swatch
 - Randomize seed color (locked swatches stay put)
 

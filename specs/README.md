@@ -30,7 +30,7 @@ A visual tool for generating harmonious color palettes using color theory algori
 ```
 Select Swatch → Adjust Color → Choose Harmony → Export/Copy/Save
        ↓              ↓              ↓               ↓
-  Click palette    HSL / HEX     Dropdown/Tabs    HEX/RGB/CSS
+  Click palette  HSL / HEX / RGB Dropdown/Tabs    HEX/RGB/CSS
 ```
 
 Unlocked swatch edits retarget the canonical base through the harmony inverse. Lock siblings

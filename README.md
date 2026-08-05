@@ -7,7 +7,7 @@ A visual tool for generating harmonious color palettes using color theory algori
 - **7 Harmony Types**: Complementary, Analogous, Triadic, Split-Complementary, Tetradic, Monochromatic, 60-30-10
 - **Harmony-aware layouts**: Swatch count and arrangement match the selected relationship
 - **60-30-10 website preview**: Abstract page mock for dominant / secondary / accent roles
-- **Interactive Color Picker**: HSL sliders and HEX input
+- **Interactive Color Picker**: HSL sliders plus HEX and RGB inputs
 - **Live Preview**: Real-time palette generation
 - **One-Click Copy**: Click any swatch to copy its HEX value
 - **Export Options**: CSS variables, Tailwind config, or JSON

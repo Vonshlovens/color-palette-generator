@@ -22,15 +22,18 @@ describe('color conversions', () => {
     expect(hslToRgb(hsl)).toEqual(rgb);
   });
 
-  it('round-trips representative RGB and HSL values', () => {
+  it('round-trips representative RGB values without losing channel precision', () => {
     const rgb = { r: 64, g: 128, b: 191 };
     const hsl = rgbToHsl(rgb);
     const roundTrip = hslToRgb(hsl);
 
-    expect(hsl).toEqual({ h: 210, s: 50, l: 50 });
-    expect(Math.abs(roundTrip.r - rgb.r)).toBeLessThanOrEqual(1);
-    expect(Math.abs(roundTrip.g - rgb.g)).toBeLessThanOrEqual(1);
-    expect(Math.abs(roundTrip.b - rgb.b)).toBeLessThanOrEqual(1);
+    expect(roundTrip).toEqual(rgb);
+  });
+
+  it('preserves arbitrary RGB values through the canonical HSL representation', () => {
+    const rgb = { r: 15, g: 160, b: 255 };
+
+    expect(hslToRgb(rgbToHsl(rgb))).toEqual(rgb);
   });
 
   it('converts RGB and six-digit HEX in both directions', () => {
