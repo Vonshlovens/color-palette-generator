@@ -22,3 +22,14 @@
 - All color values stored internally as HSL
 - Export/display as HEX and RGB
 - Use Tailwind CSS for styling
+
+## Cursor Cloud specific instructions
+
+- This is a SvelteKit + Svelte 5 app. The package manager is Bun (`bun@1.3.14`), and Bun is installed to `~/.bun/bin` by the startup update script; login shells pick it up automatically via `~/.bashrc`. If a non-login shell can't find `bun`, run `export PATH="$HOME/.bun/bin:$PATH"`.
+- Standard commands live in `package.json` scripts and `README.md`; use them directly:
+  - Lint/type check: `bun run check`
+  - Tests: `bun run test` (Vitest)
+  - Build: `bun run build`
+  - Dev server: `bun run dev` (Vite on port 5173, not 3000)
+- Database: Turso/libSQL via Drizzle. The DB URL defaults to `file:local.db` in code, so `.env` is optional for dev (copy `.env.example` to `.env` only if you need to override). `local.db` is git-ignored and does NOT persist across fresh VMs — run `bun run db:migrate` once before exercising DB-backed features (the `/palettes` gallery and `/api/palettes` endpoints). Migrations are intentionally kept out of the startup update script.
+- Quick end-to-end API check while the dev server runs: `curl http://localhost:5173/health` (reports app + database status) and `POST http://localhost:5173/api/palettes` with a flat JSON body `{"name","hue","saturation","lightness","harmony"}`.
