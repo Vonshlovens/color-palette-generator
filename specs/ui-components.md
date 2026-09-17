@@ -41,6 +41,7 @@
 - Saturation slider (0-100%)
 - Lightness slider (0-100%)
 - HEX input field with validation
+- RGB channel inputs (0-255) with validation
 - Live color preview of the selected swatch
 - Randomize seed color (locked swatches stay put)
 
@@ -79,10 +80,10 @@
 **Features:**
 - Swatch count and grid layout follow the active harmony
 - Each swatch shows:
-  - Color fill
-  - HEX code (click swatch to select for editing; use copy control for clipboard)
+  - Color fill (the full swatch surface selects it for editing)
+  - HEX code (use the separate copy control for clipboard)
   - Selection ring for the swatch currently in the color picker
-  - Lock toggle to freeze that slot while other colors change
+  - Always-visible lock toggle to freeze that slot while other colors change
   - Contrast indicator (light/dark text)
 - Hover state reveals full color info
 - For 60-30-10: proportional swatches plus an abstract website preview
@@ -120,9 +121,10 @@
 - `onToggleLock?: (index: number) => void`
 
 **Features:**
-- Click swatch to select it for editing in the color picker
+- Click anywhere on the swatch to select it for editing in the color picker
 - Separate copy control for HEX clipboard
-- Lock button freezes the slot against seed/randomize updates
+- Always-visible lock button freezes the slot against seed/randomize updates; unlock it to let the
+  harmony relationship control the slot again
 - Tooltip with RGB/HSL values
 - Auto text color (black/white) based on luminance
 
@@ -177,7 +179,8 @@ colors: {
 - `dateLabel: string` (pre-formatted, e.g. "Created 2026-07-28")
 
 **Features:**
-- Swatch strip recomputed client-side via `generatePalette` from the stored HSL + harmony
+- Swatch strip recomputed client-side from the stored base HSL + harmony, then applies each saved
+  locked-swatch HSL override so the preview matches the snapshot editor
 - Harmony badge (`getHarmonyName`) and created date
 - Primary CTA "Open & edit" → `/palettes/:slug` (the workspace supports edit + save-as-new)
 - Secondary "Copy link" copies the public share URL

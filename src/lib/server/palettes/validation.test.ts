@@ -24,10 +24,12 @@ describe('createPaletteSchema', () => {
       name: 'Ocean Sunset',
       hue: 0,
       saturation: 100,
-      lightness: 0
+      lightness: 0,
+      lockedSwatches: []
     });
 
     expect(createPaletteSchema.safeParse({ ...validPalette, hue: 360 }).success).toBe(true);
+    expect(createPaletteSchema.parse(validPalette).lockedSwatches).toEqual([]);
   });
 
   it.each(['', '   ', 'x'.repeat(81)])('rejects invalid name %o', (name) => {
@@ -54,6 +56,34 @@ describe('createPaletteSchema', () => {
 
   it('rejects unknown request properties', () => {
     expect(createPaletteSchema.safeParse({ ...validPalette, id: 'internal' }).success).toBe(false);
+  });
+
+  it('accepts valid locked swatch HSL overrides', () => {
+    expect(
+      createPaletteSchema.parse({
+        ...validPalette,
+        lockedSwatches: [{ index: 2, h: 330, s: 80, l: 45 }]
+      }).lockedSwatches
+    ).toEqual([{ index: 2, h: 330, s: 80, l: 45 }]);
+  });
+
+  it('rejects duplicate or out-of-range locked swatch indexes', () => {
+    expect(
+      createPaletteSchema.safeParse({
+        ...validPalette,
+        lockedSwatches: [
+          { index: 0, h: 10, s: 20, l: 30 },
+          { index: 0, h: 20, s: 30, l: 40 }
+        ]
+      }).success
+    ).toBe(false);
+    expect(
+      createPaletteSchema.safeParse({
+        ...validPalette,
+        harmony: 'complementary',
+        lockedSwatches: [{ index: 2, h: 10, s: 20, l: 30 }]
+      }).success
+    ).toBe(false);
   });
 });
 

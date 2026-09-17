@@ -1,6 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import { HARMONY_TYPES, type HSL, type HarmonyType } from '$lib/types';
-import { generatePalette, HARMONY_COLOR_COUNTS, inferBaseFromSwatch } from './harmonies';
+import {
+  generatePalette,
+  generateSnapshotPalette,
+  HARMONY_COLOR_COUNTS,
+  inferBaseFromSwatch
+} from './harmonies';
 
 const base: HSL = { h: 350, s: 82, l: 46 };
 
@@ -95,6 +100,31 @@ describe('harmony algorithms', () => {
     expect(cool[0].hsl.s).toBeGreaterThan(softer[0].hsl.s);
     expect(cool[2].hsl.h).toBe(40);
     expect(warm[2].hsl.h).toBe(210);
+  });
+
+  it('applies saved locked swatches to 60-30-10 previews', () => {
+    const snapshot = {
+      hue: 180,
+      saturation: 90,
+      lightness: 24.509803921568626,
+      harmony: '60-30-10' as const,
+      lockedSwatches: [
+        { index: 0, h: 36.5217391304348, s: 69.69696969696972, l: 93.52941176470588 },
+        { index: 1, h: 69.23076923076923, s: 28.888888888888893, l: 8.823529411764705 },
+        { index: 2, h: 0, s: 100, l: 24.509803921568626 }
+      ]
+    };
+
+    const preview = generateSnapshotPalette(snapshot);
+
+    expect(preview.map((color) => color.hsl)).toEqual(
+      snapshot.lockedSwatches.map(({ index: _index, ...hsl }) => hsl)
+    );
+    expect(preview.map((color) => color.hex)).not.toEqual(
+      generatePalette({ h: snapshot.hue, s: snapshot.saturation, l: snapshot.lightness }, snapshot.harmony).map(
+        (color) => color.hex
+      )
+    );
   });
 
   it('clamps adjusted channels at valid input boundaries', () => {

@@ -110,6 +110,7 @@
                 saturation={palette.saturation}
                 lightness={palette.lightness}
                 harmony={palette.harmony}
+                lockedSwatches={palette.lockedSwatches}
                 dateLabel="Created {palette.createdAt.slice(0, 10)}"
               />
             </li>

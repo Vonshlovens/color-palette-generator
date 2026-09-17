@@ -45,13 +45,15 @@ describe('palette queries', () => {
           hue: 275.5,
           saturation: 64,
           lightness: 42,
-          harmony: 'split-complementary'
+          harmony: 'split-complementary',
+          lockedSwatches: [{ index: 2, h: 35, s: 70, l: 55 }]
         },
         database
       );
 
       expect(created.id).toMatch(/^[0-9a-f-]{36}$/);
       expect(created.slug).toMatch(/^[A-Za-z0-9_-]{12}$/);
+      expect(created.lockedSwatches).toEqual([{ index: 2, h: 35, s: 70, l: 55 }]);
 
       const retrieved = await getPaletteBySlug(created.slug, database);
       expect(retrieved).toEqual(created);

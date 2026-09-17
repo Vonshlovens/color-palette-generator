@@ -1,4 +1,4 @@
-import type { HSL, Color, HarmonyType } from '$lib/types';
+import type { HSL, Color, HarmonyType, PaletteSnapshot } from '$lib/types';
 import { createColor, normalizeHue, clamp } from './conversions';
 
 /** Expected swatch count for each harmony (true to the color-theory relationship). */
@@ -36,6 +36,27 @@ export function generatePalette(baseHsl: HSL, harmony: HarmonyType): Color[] {
     default:
       return generateComplementary(baseHsl);
   }
+}
+
+/**
+ * Generate the display colors for a saved palette snapshot.
+ *
+ * Snapshot locks are HSL overrides for individual slots. They must be applied after the harmony
+ * colors are generated so compact previews faithfully match the editor and shared palette view.
+ */
+export function generateSnapshotPalette(snapshot: PaletteSnapshot): Color[] {
+  const generated = generatePalette(
+    { h: snapshot.hue, s: snapshot.saturation, l: snapshot.lightness },
+    snapshot.harmony
+  );
+  const lockedByIndex = new Map(snapshot.lockedSwatches?.map((swatch) => [swatch.index, swatch]));
+
+  return generated.map((color, index) => {
+    const lockedSwatch = lockedByIndex.get(index);
+    return lockedSwatch
+      ? createColor({ h: lockedSwatch.h, s: lockedSwatch.s, l: lockedSwatch.l })
+      : color;
+  });
 }
 
 /**

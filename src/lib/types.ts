@@ -41,15 +41,27 @@ export interface PaletteState {
   harmony: HarmonyType;
 }
 
-export type PaletteSnapshot = Readonly<PaletteState>;
+/** A persisted HSL override for a palette slot that was deliberately locked. */
+export interface LockedSwatch {
+  index: number;
+  h: number;
+  s: number;
+  l: number;
+}
 
-export interface SavedPalette {
+/**
+ * The complete generator state required to reproduce a saved palette.
+ *
+ * Locked swatches are stored as HSL overrides rather than derived HEX/RGB output, so a saved
+ * palette remains faithful to the workspace while keeping HSL as the canonical color space.
+ */
+export interface PaletteSnapshot extends PaletteState {
+  lockedSwatches?: readonly LockedSwatch[];
+}
+
+export interface SavedPalette extends PaletteSnapshot {
   slug: string;
   name: string;
-  hue: number;
-  saturation: number;
-  lightness: number;
-  harmony: HarmonyType;
   createdAt: string;
   updatedAt: string;
 }

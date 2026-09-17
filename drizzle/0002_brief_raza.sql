@@ -1,0 +1,1 @@
+ALTER TABLE `palettes` ADD `locked_swatches` text DEFAULT '[]' NOT NULL;
