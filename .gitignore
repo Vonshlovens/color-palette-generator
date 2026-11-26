@@ -17,3 +17,6 @@ data/
 *.db
 .beads-credential-key
 .beads/proxieddb/
+
+# Wrangler local state (local D1 database) and logs
+.wrangler/

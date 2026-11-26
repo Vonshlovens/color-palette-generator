@@ -1,20 +1,21 @@
-import { randomBytes, randomUUID } from 'node:crypto';
 import { desc, eq } from 'drizzle-orm';
-import type { LibSQLDatabase } from 'drizzle-orm/libsql';
-import { db, schema } from '$lib/server/db';
+import type { Database } from '$lib/server/db';
 import { palettes, type PaletteRecord } from '$lib/server/db/schema';
 import type { CreatePaletteInput } from './validation';
 
 const MAX_SLUG_ATTEMPTS = 3;
-type PaletteDatabase = LibSQLDatabase<typeof schema>;
 
+/** 9 random bytes encode to exactly 12 unpadded base64url characters. */
 function createSlug(): string {
-  return randomBytes(9).toString('base64url');
+  const bytes = crypto.getRandomValues(new Uint8Array(9));
+  return btoa(String.fromCharCode(...bytes))
+    .replaceAll('+', '-')
+    .replaceAll('/', '_');
 }
 
 export async function createPalette(
-  input: CreatePaletteInput,
-  database: PaletteDatabase = db
+  database: Database,
+  input: CreatePaletteInput
 ): Promise<PaletteRecord> {
   const now = new Date();
 
@@ -22,7 +23,7 @@ export async function createPalette(
     const [created] = await database
       .insert(palettes)
       .values({
-        id: randomUUID(),
+        id: crypto.randomUUID(),
         slug: createSlug(),
         name: input.name,
         hue: input.hue,
@@ -52,8 +53,8 @@ export interface ListPalettesResult {
 }
 
 export async function listPalettes(
-  { limit, offset }: ListPalettesOptions,
-  database: PaletteDatabase = db
+  database: Database,
+  { limit, offset }: ListPalettesOptions
 ): Promise<ListPalettesResult> {
   // Fetch one extra row to determine whether another page exists.
   const rows = await database.query.palettes.findMany({
@@ -69,8 +70,8 @@ export async function listPalettes(
 }
 
 export async function getPaletteBySlug(
-  slug: string,
-  database: PaletteDatabase = db
+  database: Database,
+  slug: string
 ): Promise<PaletteRecord | undefined> {
   return database.query.palettes.findFirst({
     where: eq(palettes.slug, slug)

@@ -48,7 +48,7 @@ to keep them fixed while editing one role.
 
 ### Gallery (v3)
 
-- `/palettes` is a gallery of database-backed snapshots (Turso or local SQLite), newest first,
+- `/palettes` is a gallery of database-backed snapshots (Cloudflare D1), newest first,
   server-rendered with paginated "load more" via `GET /api/palettes`.
 - Each gallery card previews the palette (recomputed client-side from the stored HSL + harmony),
   links to `/palettes/:slug` to open the snapshot in the editor, and offers a copy-share-link

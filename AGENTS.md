@@ -31,5 +31,5 @@
   - Tests: `bun run test` (Vitest)
   - Build: `bun run build`
   - Dev server: `bun run dev` (Vite on port 5173, not 3000)
-- Database: Turso/libSQL via Drizzle. The DB URL defaults to `file:local.db` in code, so `.env` is optional for dev (copy `.env.example` to `.env` only if you need to override). `local.db` is git-ignored and does NOT persist across fresh VMs — run `bun run db:migrate` once before exercising DB-backed features (the `/palettes` gallery and `/api/palettes` endpoints). Migrations are intentionally kept out of the startup update script.
+- Database: Cloudflare D1 via Drizzle (`drizzle-orm/d1`), exposed per request as `event.locals.db` (see `src/hooks.server.ts`). No `.env` is needed. Local D1 state lives in `.wrangler/state` (git-ignored) and is shared by `bun run dev` and `bun run preview`; run `bun run db:migrate` once before exercising DB-backed features (the `/palettes` gallery and `/api/palettes` endpoints). Tests create their own in-memory D1. Migrations are intentionally kept out of the startup update script.
 - Quick end-to-end API check while the dev server runs: `curl http://localhost:5173/health` (reports app + database status) and `POST http://localhost:5173/api/palettes` with a flat JSON body `{"name","hue","saturation","lightness","harmony"}`.

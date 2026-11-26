@@ -4,7 +4,7 @@ import { toSavedPalette } from '$lib/server/palettes/mapping';
 import { createPaletteSchema, listPalettesQuerySchema } from '$lib/server/palettes/validation';
 import type { RequestHandler } from './$types';
 
-export const GET: RequestHandler = async ({ url }) => {
+export const GET: RequestHandler = async ({ url, locals }) => {
   const result = listPalettesQuerySchema.safeParse(Object.fromEntries(url.searchParams));
 
   if (!result.success) {
@@ -24,7 +24,7 @@ export const GET: RequestHandler = async ({ url }) => {
   }
 
   try {
-    const { palettes, hasMore } = await listPalettes(result.data);
+    const { palettes, hasMore } = await listPalettes(locals.db, result.data);
 
     return json({
       palettes: palettes.map(toSavedPalette),
@@ -43,7 +43,7 @@ export const GET: RequestHandler = async ({ url }) => {
   }
 };
 
-export const POST: RequestHandler = async ({ request }) => {
+export const POST: RequestHandler = async ({ request, locals }) => {
   let payload: unknown;
 
   try {
@@ -74,7 +74,7 @@ export const POST: RequestHandler = async ({ request }) => {
   }
 
   try {
-    const palette = toSavedPalette(await createPalette(result.data));
+    const palette = toSavedPalette(await createPalette(locals.db, result.data));
 
     return json(
       { palette },

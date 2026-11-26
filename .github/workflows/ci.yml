@@ -10,8 +10,6 @@ permissions:
 jobs:
   quality:
     runs-on: ubuntu-latest
-    env:
-      TURSO_DATABASE_URL: file:${{ runner.temp }}/palette-ci.db
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
@@ -24,17 +22,16 @@ jobs:
       - name: Install dependencies
         run: bun install --frozen-lockfile
 
-      - name: Apply database migrations
-        run: bun run db:migrate
-
       - name: Check types and Svelte
         run: bun run check
 
+      # Integration tests create in-memory local D1 databases and apply drizzle/ themselves.
       - name: Run unit and integration tests
         run: bun run test
 
       - name: Build production app
         run: bun run build
 
-      - name: Build production container
-        run: docker build --tag palette-studio:ci .
+      # Bundles the Worker exactly as `wrangler deploy` would, without credentials or uploading.
+      - name: Validate Worker bundle
+        run: bunx wrangler deploy --dry-run --outdir dist-worker
