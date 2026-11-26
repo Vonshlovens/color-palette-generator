@@ -14,13 +14,16 @@
   <!-- The sign-out form sits outside the segmented well so its button stays a direct child. -->
   <form id="sign-out-form" method="POST" action="/sign-out" class="hidden"></form>
   <div class="segmented" role="group" aria-label="Account">
-    <span
-      class="bg-card text-foreground grid size-8 place-items-center rounded-lg font-mono text-xs font-semibold uppercase shadow-[inset_0_1px_0_var(--panel-edge),0_1px_2px_oklch(0_0_0/0.12)]"
-      title="Signed in as {user.email}"
+    <!-- The initial opens /account (sign-in methods, such as connecting GitHub). -->
+    <a
+      href="/account"
+      class="bg-card !text-foreground !size-8 !px-0 font-mono text-xs font-semibold uppercase shadow-[inset_0_1px_0_var(--panel-edge),0_1px_2px_oklch(0_0_0/0.12)] hover:ring-1 hover:ring-ring/40 aria-[current=page]:ring-1 aria-[current=page]:ring-ring/60"
+      aria-current={page.url.pathname.startsWith('/account') ? 'page' : undefined}
+      title="Account: {user.email}"
     >
-      <span class="sr-only">Signed in as {user.email}</span>
+      <span class="sr-only">Account, signed in as {user.email}</span>
       <span aria-hidden="true">{user.email.charAt(0)}</span>
-    </span>
+    </a>
     {#if user.isOwner}
       <a
         href="/approvals"

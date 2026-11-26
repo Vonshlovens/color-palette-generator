@@ -15,8 +15,9 @@ A visual tool for generating harmonious color palettes using color theory algori
 - **Saved Palettes (v2)**: Save the exact swatches on screen with a public share link; the creator
   or owner can rename or delete them
 - **Gallery (v3)**: Browse database-backed saved palettes at `/palettes`
-- **Owner-approved accounts**: Magic-link sign-in; saving palettes requires an account the owner
-  approved at `/approvals`. Generating palettes stays in the browser and needs no account.
+- **Owner-approved accounts**: Magic-link sign-in, plus optional GitHub sign-in; saving palettes
+  requires an account the owner approved at `/approvals`. Generating palettes stays in the browser
+  and needs no account.
 
 ## Tech Stack
 
@@ -24,7 +25,7 @@ A visual tool for generating harmonious color palettes using color theory algori
 - SvelteKit for routing
 - Tailwind CSS v4 for styling
 - Cloudflare Workers (`@sveltejs/adapter-cloudflare`) with Cloudflare D1 and Drizzle ORM
-- Better Auth (magic link plugin) for owner-approved sign-in
+- Better Auth (magic link plugin, optional GitHub OAuth) for owner-approved sign-in
 - TypeScript for type safety
 
 ## Development
@@ -97,7 +98,8 @@ bun run deploy
 
 The Worker is served only at its custom domain, `https://colors.ericevans.dev` (`routes` in
 `wrangler.jsonc`); `workers.dev` and preview URLs are disabled. Non-secret settings
-(`BETTER_AUTH_URL`, `AUTH_EMAIL_FROM`, `OWNER_EMAIL`) are `vars` in `wrangler.jsonc`.
+(`BETTER_AUTH_URL`, `AUTH_EMAIL_FROM`, `OWNER_EMAIL`) are `vars` in `wrangler.jsonc`; secrets are
+set with `wrangler secret put` (see below).
 
 `POST /api/palettes` requires an approved session, and Better Auth rate-limits its own endpoints
 per isolate, but a Cloudflare WAF rate limiting rule for `/api/*` (the Free plan includes one) still
@@ -108,7 +110,8 @@ Use `bunx wrangler tail` or the Workers observability dashboard for logs.
 
 ## Accounts and approvals
 
-Sign-in is magic link only (no passwords), and every account except the owner needs approval:
+Sign-in uses magic links, plus GitHub when it is configured (no passwords), and every account
+except the owner needs approval:
 
 1. A visitor submits **Request access** at `/sign-in`. This stores a `pending` user and sends no
    email. New requests are refused while `AUTH_MAX_PENDING_REQUESTS` (default 25) are pending.
@@ -132,7 +135,8 @@ created for approved users, so a link issued before a revoke cannot be redeemed.
 | `BETTER_AUTH_URL` | Public URL used in sign-in links, set in `wrangler.jsonc` `vars`. Required outside `bun run dev`, which uses the request origin. |
 | `OWNER_EMAIL` | Owner/admin email; defaults to `eric@ericevans.dev`. |
 | `RESEND_API_KEY`, `AUTH_EMAIL_FROM` | Email delivery via the Resend HTTP API. `AUTH_EMAIL_FROM` must use a domain verified in Resend. |
-| `AUTH_MAX_PENDING_REQUESTS` | Cap on pending access requests (default 25). |
+| `AUTH_MAX_PENDING_REQUESTS` | Cap on pending access requests (default 25), including ones made by GitHub sign-in. |
+| `GITHUB_CLIENT_ID`, `GITHUB_CLIENT_SECRET` | Optional secrets. GitHub sign-in and the Connect GitHub control appear only when both are set. |
 
 Without `RESEND_API_KEY`, emails (including sign-in links) are printed to the server console under
 `bun run dev`, or under `bun run preview` when `BETTER_AUTH_URL` is a localhost URL. Any other
@@ -145,6 +149,44 @@ production, set the two secrets with Wrangler:
 openssl rand -base64 32 | bunx wrangler secret put BETTER_AUTH_SECRET
 bunx wrangler secret put RESEND_API_KEY
 ```
+
+### GitHub sign-in
+
+GitHub uses the same approval gate:
+
+- **Continue with GitHub** at `/sign-in` signs approved people straight in. A GitHub login whose
+  verified email has no account becomes a `pending` request in `/approvals` (unless
+  `AUTH_MAX_PENDING_REQUESTS` are already pending, in which case nothing is stored). It gets no
+  session: the person lands on `/sign-in` with "Access requested — waiting for owner approval".
+- A GitHub login joins an existing account automatically only when GitHub has verified that same
+  email. GitHub is not a trusted provider on purpose, so an unverified email on someone else's
+  GitHub account can never sign in to an existing account; that person is asked to sign in with
+  an email link instead.
+- To use a GitHub account whose email differs from yours, sign in with an email link, open
+  `/account` (click your initial in the header), and choose **Connect GitHub**. After that,
+  Continue with GitHub opens the same account. Disconnect it there at any time; the email link
+  always keeps working.
+- Choosing Continue with GitHub *before* connecting it creates a separate pending account for the
+  GitHub email. Remove it in `/approvals`, then connect GitHub from `/account`.
+
+To set it up, create a GitHub OAuth app at
+[github.com/settings/applications/new](https://github.com/settings/applications/new):
+
+| Field | Value |
+| --- | --- |
+| Homepage URL | `https://colors.ericevans.dev` |
+| Authorization callback URL | `https://colors.ericevans.dev/api/auth/callback/github` |
+
+Generate a client secret, then store both values as Worker secrets and deploy:
+
+```bash
+bunx wrangler secret put GITHUB_CLIENT_ID
+bunx wrangler secret put GITHUB_CLIENT_SECRET
+```
+
+GitHub OAuth apps allow one callback URL, so local work needs a second OAuth app with the callback
+`http://localhost:5173/api/auth/callback/github` (`bun run dev`) or
+`http://localhost:8787/api/auth/callback/github` (`bun run preview`), and its values in `.dev.vars`.
 
 Saved palettes store their name, the exact swatches as a JSON array of HSL values (`colors`, 1–7),
 the harmony (or `freeform`), the HSL generator seed, public slug, and timestamps. Rows saved before

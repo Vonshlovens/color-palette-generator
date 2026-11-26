@@ -1,5 +1,6 @@
 import { fail, redirect } from '@sveltejs/kit';
 import { z } from 'zod';
+import { OAUTH_ACCESS_ERRORS } from '$lib/server/auth';
 import { requestAccess } from '$lib/server/auth/access';
 import { safeRedirectPath } from '$lib/redirect';
 import type { Actions, PageServerLoad } from './$types';
@@ -10,9 +11,20 @@ const requestAccessSchema = z.object({
   email: emailSchema
 });
 
-const LINK_ERRORS: Record<string, string> = {
+const SIGN_IN_ERRORS: Record<string, string> = {
   INVALID_TOKEN: 'That sign-in link is invalid, expired, or already used. Request a new one.',
-  EXPIRED_TOKEN: 'That sign-in link expired. Request a new one.'
+  EXPIRED_TOKEN: 'That sign-in link expired. Request a new one.',
+  [OAUTH_ACCESS_ERRORS.denied]: 'That account does not have access to Palette Studio.',
+  [OAUTH_ACCESS_ERRORS.closed]:
+    'Access requests are paused right now, so your GitHub sign-in was not recorded. Try again later.',
+  [OAUTH_ACCESS_ERRORS.emailUnverified]:
+    'GitHub has not verified the email on that account. Verify it on GitHub, or use an email link.',
+  account_not_linked:
+    'An account already uses that email, but GitHub has not verified it. Sign in with an email link, then connect GitHub from your account page.',
+  access_denied: 'GitHub sign-in was cancelled.',
+  email_not_found: 'GitHub did not share an email address. Use an email link instead.',
+  state_mismatch: 'That GitHub sign-in expired or started in another browser. Try again.',
+  state_not_found: 'That GitHub sign-in expired or started in another browser. Try again.'
 };
 
 export const load: PageServerLoad = ({ locals, url }) => {
@@ -20,15 +32,44 @@ export const load: PageServerLoad = ({ locals, url }) => {
   if (locals.user) redirect(303, redirectTo);
 
   const error = url.searchParams.get('error');
+  const accessRequested = error === OAUTH_ACCESS_ERRORS.pending;
   return {
     redirectTo,
-    linkError: error
-      ? (LINK_ERRORS[error] ?? 'That sign-in link can no longer be used. Your access may have changed.')
-      : null
+    githubEnabled: locals.authConfig.github !== null,
+    // A GitHub sign-in that is (now) an access request waiting for the owner.
+    accessRequested,
+    linkError:
+      error && !accessRequested
+        ? (SIGN_IN_ERRORS[error] ?? 'That sign-in could not be completed. Your access may have changed.')
+        : null
   };
 };
 
 export const actions: Actions = {
+  github: async ({ locals, request }) => {
+    if (!locals.authConfig.github) return fail(404, { form: 'github' as const, error: 'GitHub sign-in is not available.' });
+    const redirectTo = safeRedirectPath(String((await request.formData()).get('redirectTo') ?? '/'));
+
+    let url: string | undefined;
+    try {
+      ({ url } = await locals.auth.api.signInSocial({
+        body: {
+          provider: 'github',
+          callbackURL: redirectTo,
+          errorCallbackURL: `/sign-in?redirectTo=${encodeURIComponent(redirectTo)}`
+        },
+        headers: request.headers
+      }));
+    } catch (cause) {
+      console.error('Failed to start GitHub sign-in', cause);
+    }
+    if (!url) {
+      return fail(503, { form: 'github' as const, error: 'GitHub sign-in is unavailable right now. Try again.' });
+    }
+    // The OAuth state cookie was set on this response by the sveltekitCookies plugin.
+    redirect(303, url);
+  },
+
   signIn: async ({ locals, request }) => {
     const form = await request.formData();
     const email = String(form.get('email') ?? '').trim();

@@ -17,7 +17,10 @@ declare global {
     // interface PageData {}
     // interface PageState {}
     interface Platform {
-      /** Bindings declared in wrangler.jsonc, plus vars and secrets (`.dev.vars` locally). */
+      /**
+       * Bindings declared in wrangler.jsonc, plus vars and secrets (`.dev.vars` locally). AuthEnv
+       * holds the auth settings, including GITHUB_CLIENT_ID and GITHUB_CLIENT_SECRET.
+       */
       env: AuthEnv & {
         DB: D1Database;
       };

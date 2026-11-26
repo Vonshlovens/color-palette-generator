@@ -22,8 +22,10 @@
 			"migrations_dir": "drizzle"
 		}
 	],
-	// Non-secret settings. Secrets (BETTER_AUTH_SECRET, RESEND_API_KEY) are set with
-	// `wrangler secret put`. `.dev.vars` overrides these for local `wrangler dev`.
+	// Non-secret settings. Secrets (BETTER_AUTH_SECRET, RESEND_API_KEY, and optionally
+	// GITHUB_CLIENT_ID + GITHUB_CLIENT_SECRET, which turn on GitHub sign-in with the callback URL
+	// https://colors.ericevans.dev/api/auth/callback/github) are set with `wrangler secret put`.
+	// `.dev.vars` overrides these for local `wrangler dev`.
 	"vars": {
 		"BETTER_AUTH_URL": "https://colors.ericevans.dev",
 		"AUTH_EMAIL_FROM": "Palette Studio <colors@mail.ericevans.dev>",

@@ -1,5 +1,11 @@
 import { error, fail, redirect } from '@sveltejs/kit';
-import { listAccessUsers, isOwnerEmail, setApprovalStatus } from '$lib/server/auth/access';
+import {
+  isOwnerEmail,
+  listAccessUsers,
+  listGitHubUserIds,
+  removeUnapprovedUser,
+  setApprovalStatus
+} from '$lib/server/auth/access';
 import { accessApprovedEmail, createEmailSender } from '$lib/server/auth/email';
 import type { ApprovalStatus } from '$lib/server/db/schema';
 import type { Actions, PageServerLoad, RequestEvent } from './$types';
@@ -12,7 +18,10 @@ function requireOwner(locals: App.Locals, url: URL) {
 
 export const load: PageServerLoad = async ({ locals, url }) => {
   requireOwner(locals, url);
-  const users = await listAccessUsers(locals.db);
+  const [users, githubUserIds] = await Promise.all([
+    listAccessUsers(locals.db),
+    listGitHubUserIds(locals.db)
+  ]);
 
   return {
     users: users.map((account) => ({
@@ -21,6 +30,7 @@ export const load: PageServerLoad = async ({ locals, url }) => {
       email: account.email,
       status: account.approvalStatus,
       isOwner: isOwnerEmail(account.email, locals.authConfig.ownerEmail),
+      hasGitHub: githubUserIds.has(account.id),
       requestedAt: account.createdAt.toISOString()
     }))
   };
@@ -49,5 +59,12 @@ function statusAction(status: ApprovalStatus) {
 export const actions: Actions = {
   approve: statusAction('approved'),
   reject: statusAction('rejected'),
-  revoke: statusAction('revoked')
+  revoke: statusAction('revoked'),
+  remove: async ({ locals, request, url }) => {
+    requireOwner(locals, url);
+    const userId = String((await request.formData()).get('userId') ?? '');
+    const removed = await removeUnapprovedUser(locals.db, userId, locals.authConfig.ownerEmail);
+    if (!removed) return fail(404, { error: 'Only pending or rejected accounts can be removed.' });
+    return { removed: { email: removed.email } };
+  }
 };

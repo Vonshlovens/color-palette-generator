@@ -1,6 +1,7 @@
-import { and, count, desc, eq, gt, ne } from 'drizzle-orm';
+import { and, count, desc, eq, gt, inArray, ne } from 'drizzle-orm';
 import type { Database } from '$lib/server/db';
 import {
+  account,
   session,
   user,
   verification,
@@ -61,6 +62,14 @@ export async function ensureOwner(db: Database, ownerEmail: string): Promise<Use
   return owner;
 }
 
+export async function countPendingRequests(db: Database): Promise<number> {
+  const [{ pending }] = await db
+    .select({ pending: count() })
+    .from(user)
+    .where(eq(user.approvalStatus, 'pending'));
+  return pending;
+}
+
 export type AccessRequestResult =
   | { outcome: 'created' }
   | { outcome: 'exists'; status: ApprovalStatus }
@@ -80,11 +89,7 @@ export async function requestAccess(
   const existing = await findUserByEmail(db, email);
   if (existing) return { outcome: 'exists', status: existing.approvalStatus };
 
-  const [{ pending }] = await db
-    .select({ pending: count() })
-    .from(user)
-    .where(eq(user.approvalStatus, 'pending'));
-  if (pending >= maxPendingRequests) return { outcome: 'closed' };
+  if ((await countPendingRequests(db)) >= maxPendingRequests) return { outcome: 'closed' };
 
   const [created] = await db
     .insert(user)
@@ -101,6 +106,23 @@ export async function requestAccess(
   if (created) return { outcome: 'created' };
   const raced = await findUserByEmail(db, email);
   return { outcome: 'exists', status: raced?.approvalStatus ?? 'pending' };
+}
+
+/** The OAuth logins linked to a user, such as GitHub. Magic-link sign-in has no account row. */
+export async function listLinkedAccounts(db: Database, userId: string) {
+  return db
+    .select({ id: account.id, providerId: account.providerId, createdAt: account.createdAt })
+    .from(account)
+    .where(eq(account.userId, userId));
+}
+
+/** IDs of users with a linked GitHub login, for the Approvals list. */
+export async function listGitHubUserIds(db: Database): Promise<Set<string>> {
+  const rows = await db
+    .select({ userId: account.userId })
+    .from(account)
+    .where(eq(account.providerId, 'github'));
+  return new Set(rows.map((row) => row.userId));
 }
 
 export async function listAccessUsers(db: Database): Promise<UserRecord[]> {
@@ -127,6 +149,29 @@ export async function setApprovalStatus(
     await db.delete(session).where(eq(session.userId, userId));
   }
   return updated;
+}
+
+/**
+ * Deletes a pending or rejected user with their sessions and linked logins, for example a
+ * duplicate made by signing in with GitHub before linking it. Approved, revoked, and owner
+ * accounts are kept, since they may own palettes.
+ */
+export async function removeUnapprovedUser(
+  db: Database,
+  userId: string,
+  ownerEmail: string
+): Promise<UserRecord | undefined> {
+  const [removed] = await db
+    .delete(user)
+    .where(
+      and(
+        eq(user.id, userId),
+        inArray(user.approvalStatus, ['pending', 'rejected']),
+        ne(user.email, normalizeEmail(ownerEmail))
+      )
+    )
+    .returning();
+  return removed;
 }
 
 /**

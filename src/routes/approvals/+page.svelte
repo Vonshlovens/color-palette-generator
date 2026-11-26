@@ -1,5 +1,6 @@
 <script lang="ts">
   import { enhance } from '$app/forms';
+  import GitHubMark from '$lib/components/GitHubMark.svelte';
   import type { PageProps } from './$types';
 
   let { data, form }: PageProps = $props();
@@ -49,6 +50,16 @@
       {#if user.status === 'pending'}
         <button type="submit" class={quietButton} formaction="?/reject">Reject</button>
       {/if}
+      {#if user.status === 'pending' || user.status === 'rejected'}
+        <button
+          type="submit"
+          class={dangerButton}
+          formaction="?/remove"
+          title="Delete this account and its GitHub link, for example a duplicate"
+        >
+          Remove
+        </button>
+      {/if}
       {#if user.status === 'approved'}
         <button type="submit" class={dangerButton} formaction="?/revoke">Revoke</button>
       {/if}
@@ -87,6 +98,12 @@
                     <span class="size-1.5 rounded-full {STATUS_DOTS[user.status]}" aria-hidden="true"></span>
                     {STATUS_LABELS[user.status]}
                   </span>
+                  {#if user.hasGitHub}
+                    <span class="kbd gap-1 px-1.5" title="Signed in or linked with GitHub">
+                      <GitHubMark class="size-3" />
+                      GitHub
+                    </span>
+                  {/if}
                 </div>
                 <p class="text-muted-foreground truncate text-sm">
                   {user.email}
@@ -110,8 +127,8 @@
     <div class="max-w-xl">
       <h1 class="font-display text-4xl leading-[0.98] font-semibold sm:text-6xl">Approvals</h1>
       <p class="text-muted-foreground mt-3 text-[0.9375rem] leading-relaxed">
-        Approved people can sign in with a magic link and save palettes. Rejecting or revoking signs
-        them out everywhere.
+        Approved people can sign in with a magic link or GitHub and save palettes. Rejecting or
+        revoking signs them out everywhere; removing deletes a pending or rejected account.
       </p>
     </div>
     <dl class="well flex shrink-0 gap-5 rounded-2xl px-4 py-2.5 text-sm">
@@ -130,6 +147,10 @@
     <p class="well rounded-xl px-4 py-3 text-sm" role="status">
       <strong class="font-medium">{form.updated.email}</strong> is now
       {STATUS_LABELS[form.updated.status].toLowerCase()}.
+    </p>
+  {:else if form && 'removed' in form && form.removed}
+    <p class="well rounded-xl px-4 py-3 text-sm" role="status">
+      <strong class="font-medium">{form.removed.email}</strong> was removed.
     </p>
   {:else if form && 'error' in form}
     <p class="border-destructive/30 bg-destructive/10 text-destructive rounded-xl border px-4 py-3 text-sm" role="alert">

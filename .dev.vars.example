@@ -6,3 +6,7 @@ OWNER_EMAIL="eric@ericevans.dev"
 # With RESEND_API_KEY unset and a localhost BETTER_AUTH_URL, sign-in links print to the console.
 # RESEND_API_KEY=""
 # AUTH_EMAIL_FROM="Palette Studio <login@example.com>"
+# GitHub sign-in turns on only when both are set. Use a separate GitHub OAuth app for local work,
+# with the callback URL http://localhost:8787/api/auth/callback/github (or :5173 for `bun run dev`).
+# GITHUB_CLIENT_ID=""
+# GITHUB_CLIENT_SECRET=""

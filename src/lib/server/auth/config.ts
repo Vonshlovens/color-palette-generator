@@ -10,6 +10,13 @@ export interface AuthEnv extends EmailEnv {
   BETTER_AUTH_URL?: string;
   OWNER_EMAIL?: string;
   AUTH_MAX_PENDING_REQUESTS?: string;
+  GITHUB_CLIENT_ID?: string;
+  GITHUB_CLIENT_SECRET?: string;
+}
+
+export interface GitHubOAuthConfig {
+  clientId: string;
+  clientSecret: string;
 }
 
 export interface AuthConfig {
@@ -17,6 +24,8 @@ export interface AuthConfig {
   baseURL: string;
   ownerEmail: string;
   maxPendingRequests: number;
+  /** GitHub OAuth credentials; null unless both GITHUB_CLIENT_ID and GITHUB_CLIENT_SECRET are set. */
+  github: GitHubOAuthConfig | null;
   dev: boolean;
   /** Print emails to the console when no RESEND_API_KEY is set: `vite dev` or a localhost URL. */
   logEmails: boolean;
@@ -36,7 +45,9 @@ const authEnvSchema = z.object({
     z.coerce.number().int().min(0).max(1000).default(25)
   ),
   RESEND_API_KEY: optionalString,
-  AUTH_EMAIL_FROM: optionalString
+  AUTH_EMAIL_FROM: optionalString,
+  GITHUB_CLIENT_ID: optionalString,
+  GITHUB_CLIENT_SECRET: optionalString
 });
 
 /**
@@ -54,7 +65,9 @@ export function resolveAuthConfig(
     OWNER_EMAIL: env.OWNER_EMAIL,
     AUTH_MAX_PENDING_REQUESTS: env.AUTH_MAX_PENDING_REQUESTS,
     RESEND_API_KEY: env.RESEND_API_KEY,
-    AUTH_EMAIL_FROM: env.AUTH_EMAIL_FROM
+    AUTH_EMAIL_FROM: env.AUTH_EMAIL_FROM,
+    GITHUB_CLIENT_ID: env.GITHUB_CLIENT_ID,
+    GITHUB_CLIENT_SECRET: env.GITHUB_CLIENT_SECRET
   });
 
   const secret = parsed.BETTER_AUTH_SECRET ?? (dev ? DEV_SECRET : undefined);
@@ -71,6 +84,10 @@ export function resolveAuthConfig(
     baseURL,
     ownerEmail: parsed.OWNER_EMAIL.toLowerCase(),
     maxPendingRequests: parsed.AUTH_MAX_PENDING_REQUESTS,
+    github:
+      parsed.GITHUB_CLIENT_ID && parsed.GITHUB_CLIENT_SECRET
+        ? { clientId: parsed.GITHUB_CLIENT_ID, clientSecret: parsed.GITHUB_CLIENT_SECRET }
+        : null,
     dev,
     logEmails: dev || hostname === 'localhost' || hostname === '127.0.0.1',
     email: { RESEND_API_KEY: parsed.RESEND_API_KEY, AUTH_EMAIL_FROM: parsed.AUTH_EMAIL_FROM }
