@@ -2,7 +2,7 @@
   import { PaletteCard } from '$lib/components';
   import HarmonyGlyph from '$lib/components/HarmonyGlyph.svelte';
   import { getHarmonyName } from '$lib/color/harmonies';
-  import { HARMONY_TYPES, type HarmonyType, type SavedPalette } from '$lib/types';
+  import { PALETTE_KINDS, type PaletteKind, type SavedPalette } from '$lib/types';
   import LoaderCircle from '@lucide/svelte/icons/loader-circle';
   import Plus from '@lucide/svelte/icons/plus';
   import type { PageProps } from './$types';
@@ -14,15 +14,21 @@
   let clientHasMore = $state<boolean | null>(null);
   let loadingMore = $state(false);
   let loadError = $state('');
-  let filter = $state<HarmonyType | 'all'>('all');
+  let filter = $state<PaletteKind | 'all'>('all');
+  /** Local edits: a renamed palette, or null once deleted. */
+  let edits = $state<Record<string, SavedPalette | null>>({});
 
-  const allPalettes = $derived([...data.palettes, ...extraPalettes]);
+  const allPalettes = $derived(
+    [...data.palettes, ...extraPalettes]
+      .map((palette) => (palette.slug in edits ? edits[palette.slug] : palette))
+      .filter((palette): palette is SavedPalette => palette !== null)
+  );
   const hasMore = $derived(clientHasMore ?? data.hasMore);
   const visible = $derived(
     filter === 'all' ? allPalettes : allPalettes.filter((palette) => palette.harmony === filter)
   );
   const presentHarmonies = $derived(
-    HARMONY_TYPES.filter((harmony) => allPalettes.some((palette) => palette.harmony === harmony))
+    PALETTE_KINDS.filter((harmony) => allPalettes.some((palette) => palette.harmony === harmony))
   );
 
   async function loadMore() {
@@ -30,7 +36,9 @@
     loadError = '';
 
     try {
-      const offset = data.palettes.length + extraPalettes.length;
+      // Deleted palettes no longer occupy a row, so the next page starts that much earlier.
+      const deleted = Object.values(edits).filter((edit) => edit === null).length;
+      const offset = data.palettes.length + extraPalettes.length - deleted;
       const response = await fetch(`/api/palettes?limit=${data.pageSize}&offset=${offset}`);
       const body = (await response.json()) as {
         palettes?: SavedPalette[];
@@ -42,7 +50,8 @@
         throw new Error(body.error?.message ?? 'Unable to load more palettes.');
       }
 
-      extraPalettes = [...extraPalettes, ...body.palettes];
+      const known = new Set([...data.palettes, ...extraPalettes].map((palette) => palette.slug));
+      extraPalettes = [...extraPalettes, ...body.palettes.filter((palette) => !known.has(palette.slug))];
       clientHasMore = Boolean(body.pagination?.hasMore);
     } catch (error) {
       loadError = error instanceof Error ? error.message : 'Unable to load more palettes.';
@@ -62,8 +71,8 @@
     <div class="max-w-2xl">
       <h1 class="font-display text-4xl leading-[0.98] font-semibold sm:text-6xl">Gallery</h1>
       <p class="text-muted-foreground mt-3 text-[0.9375rem] leading-relaxed">
-        Palettes people have saved and shared. Open one to remix it in the studio; saving your
-        version creates a new link.
+        Palettes people have saved and shared. Open one in the studio or freeform to remix it;
+        saving your version creates a new link.
       </p>
     </div>
     <a
@@ -122,20 +131,17 @@
         {#each visible as palette (palette.slug)}
           <li>
             <PaletteCard
-              slug={palette.slug}
-              name={palette.name}
-              hue={palette.hue}
-              saturation={palette.saturation}
-              lightness={palette.lightness}
-              harmony={palette.harmony}
+              {palette}
               dateLabel={palette.createdAt.slice(0, 10)}
+              onRenamed={(renamed) => (edits = { ...edits, [palette.slug]: renamed })}
+              onDeleted={() => (edits = { ...edits, [palette.slug]: null })}
             />
           </li>
         {/each}
       </ul>
       {#if visible.length === 0}
         <p class="text-muted-foreground py-10 text-center text-sm">
-          No {getHarmonyName(filter as HarmonyType).toLowerCase()} palettes loaded yet.
+          No {getHarmonyName(filter as PaletteKind).toLowerCase()} palettes loaded yet.
         </p>
       {/if}
     </section>

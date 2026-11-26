@@ -13,6 +13,7 @@
 
   const links = [
     { href: '/', label: 'Studio' },
+    { href: '/freeform', label: 'Freeform' },
     { href: '/palettes', label: 'Gallery' }
   ];
 
@@ -47,14 +48,18 @@
 
     <div class="ml-auto flex items-center gap-2">
       {@render actions?.()}
-      <a
-        href={isActive('/palettes') ? '/' : '/palettes'}
-        class="text-muted-foreground hover:text-foreground text-sm font-medium sm:hidden"
-      >
-        {isActive('/palettes') ? 'Studio' : 'Gallery'}
-      </a>
       <AuthControl />
       <ThemeControl />
     </div>
   </div>
+  <!-- Phones get the primary nav on its own row so every destination stays one tap away. -->
+  <nav aria-label="Primary" class="px-4 pb-2.5 sm:hidden">
+    <div class="segmented flex w-full [&>a]:flex-1">
+      {#each links as link}
+        <a href={link.href} aria-current={isActive(link.href) ? 'page' : undefined}>
+          {link.label}
+        </a>
+      {/each}
+    </div>
+  </nav>
 </header>

@@ -1,5 +1,8 @@
 <script lang="ts">
   import { PaletteWorkspace } from '$lib/components';
+  import { getStudioStoresContext } from '$lib/stores/palette.svelte';
+
+  const { studio } = getStudioStoresContext();
 
   const shortcuts = [
     { keys: ['Space'], action: 'shuffle' },
@@ -37,5 +40,5 @@
     </ul>
   </div>
 
-  <PaletteWorkspace />
+  <PaletteWorkspace store={studio} />
 </main>

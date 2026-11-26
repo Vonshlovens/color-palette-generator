@@ -1,7 +1,12 @@
 <script lang="ts">
-  import { getPaletteStoreContext, setPaletteStoreContext } from '$lib/stores/palette.svelte';
-  import type { PaletteSnapshot } from '$lib/types';
+  import {
+    PaletteStore,
+    setPaletteStoreContext,
+    tintPageWith,
+    type StudioStore
+  } from '$lib/stores/palette.svelte';
   import ColorPicker from './ColorPicker.svelte';
+  import FreeformControls from './FreeformControls.svelte';
   import HarmonySelector from './HarmonySelector.svelte';
   import PaletteAnalysis from './PaletteAnalysis.svelte';
   import PaletteDisplay from './PaletteDisplay.svelte';
@@ -9,37 +14,18 @@
   import PreviewDeck from './PreviewDeck.svelte';
 
   interface Props {
-    initialSnapshot?: PaletteSnapshot;
-    /** Saved palette name, used for exports. */
-    name?: string;
-    /** Show the curated preset strip (the blank studio does; shared palettes don't). */
-    showPresets?: boolean;
+    /** The harmony studio or freeform store; it outlives this component. */
+    store: StudioStore;
   }
 
-  let { initialSnapshot, name, showPresets = true }: Props = $props();
+  let { store }: Props = $props();
 
-  function initializePaletteStore(): void {
-    setPaletteStoreContext(initialSnapshot);
-  }
-
-  initializePaletteStore();
-  const paletteStore = getPaletteStoreContext();
-
-  // Tint the page chrome with the live palette. The body transitions these registered
-  // properties, so the ambient wash glides between palettes.
-  $effect(() => {
-    const colors = paletteStore.colors;
-    const style = document.body.style;
-    style.setProperty('--studio-accent', paletteStore.selectedColor.hex);
-    style.setProperty('--ambient-a', colors[0].hex);
-    style.setProperty('--ambient-b', colors[colors.length - 1].hex);
-  });
-
-  $effect(() => () => {
-    for (const property of ['--studio-accent', '--ambient-a', '--ambient-b']) {
-      document.body.style.removeProperty(property);
-    }
-  });
+  // The store is fixed for the life of the workspace; pages key the workspace to swap it.
+  // svelte-ignore state_referenced_locally
+  const paletteStore = store;
+  setPaletteStoreContext(paletteStore);
+  tintPageWith(paletteStore);
+  const isHarmony = paletteStore instanceof PaletteStore;
 
   function isTypingTarget(target: EventTarget | null): boolean {
     if (!(target instanceof HTMLElement)) return false;
@@ -106,12 +92,16 @@
 >
   <div class="space-y-5 lg:sticky lg:top-20">
     <ColorPicker />
-    <HarmonySelector />
+    {#if isHarmony}
+      <HarmonySelector />
+    {:else}
+      <FreeformControls />
+    {/if}
   </div>
 
   <div class="min-w-0 space-y-8">
-    <PaletteDisplay {name} />
-    {#if showPresets}
+    <PaletteDisplay />
+    {#if isHarmony}
       <PresetStrip />
     {/if}
     <PaletteAnalysis />

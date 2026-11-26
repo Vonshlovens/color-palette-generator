@@ -7,6 +7,7 @@
   import LockOpen from '@lucide/svelte/icons/lock-open';
   import Minus from '@lucide/svelte/icons/minus';
   import Plus from '@lucide/svelte/icons/plus';
+  import X from '@lucide/svelte/icons/x';
 
   interface Props {
     color: Color;
@@ -19,6 +20,8 @@
     onToggleLock?: (index: number) => void;
     /** Fine-tune lightness by a signed percentage. */
     onNudge?: (index: number, delta: number) => void;
+    /** Remove this swatch (freeform palettes only). */
+    onRemove?: (index: number) => void;
   }
 
   let {
@@ -29,7 +32,8 @@
     selected = false,
     onSelect,
     onToggleLock,
-    onNudge
+    onNudge,
+    onRemove
   }: Props = $props();
 
   const dark = $derived(getContrastTextColor(color.rgb) === 'dark');
@@ -92,6 +96,17 @@
         label="{label} {color.hex}"
         class="{chip} opacity-0 group-focus-within:opacity-100 group-hover:opacity-100"
       />
+      {#if onRemove}
+        <button
+          type="button"
+          class="{chip} opacity-0 group-focus-within:opacity-100 group-hover:opacity-100"
+          onclick={() => onRemove(index)}
+          aria-label="Remove {label}"
+          title="Remove"
+        >
+          <X class="size-4" aria-hidden="true" />
+        </button>
+      {/if}
     </div>
   </div>
 

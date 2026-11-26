@@ -46,4 +46,11 @@ describe('palette exports', () => {
     expect(svg).not.toContain('<night>');
     expect(svg.match(/<rect /g)).toHaveLength(4);
   });
+
+  it('names every token of a seven-color freeform palette', () => {
+    const colors = Array.from({ length: 7 }, (_, i) => generatePalette({ h: i * 50, s: 60, l: 50 }, 'complementary')[0]);
+    const css = buildExport('css', { name: 'Seven', harmony: 'freeform', colors });
+    expect(css).toContain(`--color-septenary: ${colors[6].hex};`);
+    expect(css).not.toContain('--color-color-');
+  });
 });

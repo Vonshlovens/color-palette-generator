@@ -1,4 +1,4 @@
-import type { HSL, Color, HarmonyType } from '$lib/types';
+import type { HSL, Color, HarmonyType, PaletteKind } from '$lib/types';
 import { createColor, normalizeHue, clamp } from './conversions';
 
 /** Expected swatch count for each harmony (true to the color-theory relationship). */
@@ -189,25 +189,26 @@ export function inferBaseFromSwatch(harmony: HarmonyType, index: number, target:
   }
 }
 
-const SWATCH_LABELS: Record<HarmonyType, readonly string[]> = {
+const SWATCH_LABELS: Record<PaletteKind, readonly string[]> = {
   complementary: ['Base', 'Complement'],
   analogous: ['Neighbor −30°', 'Base', 'Neighbor +30°'],
   triadic: ['Base', 'Triad +120°', 'Triad +240°'],
   'split-complementary': ['Base', 'Split +150°', 'Split +210°'],
   tetradic: ['Base', 'Rectangle +60°', 'Complement', 'Rectangle +240°'],
   monochromatic: ['Deep', 'Shade', 'Base', 'Tint', 'Pale'],
-  '60-30-10': SIXTY_THIRTY_TEN_ROLES
+  '60-30-10': SIXTY_THIRTY_TEN_ROLES,
+  freeform: []
 };
 
 /** Human-readable label for a palette slot, describing its role in the harmony. */
-export function getSwatchLabel(harmony: HarmonyType, index: number): string {
+export function getSwatchLabel(harmony: PaletteKind, index: number): string {
   return SWATCH_LABELS[harmony][index] ?? `Color ${index + 1}`;
 }
 
-const TOKEN_NAMES = ['primary', 'secondary', 'tertiary', 'quaternary', 'quinary'] as const;
+const TOKEN_NAMES = ['primary', 'secondary', 'tertiary', 'quaternary', 'quinary', 'senary', 'septenary'] as const;
 
 /** Stable design-token name for a palette slot, used by every export format. */
-export function getSwatchTokenName(harmony: HarmonyType, index: number): string {
+export function getSwatchTokenName(harmony: PaletteKind, index: number): string {
   if (harmony === '60-30-10') {
     return (['dominant', 'secondary', 'accent'] as const)[index] ?? `color-${index + 1}`;
   }
@@ -228,15 +229,16 @@ export const HARMONY_ANGLES: Record<HarmonyType, readonly number[]> = {
 /**
  * Get display name for harmony type
  */
-export function getHarmonyName(harmony: HarmonyType): string {
-  const names: Record<HarmonyType, string> = {
+export function getHarmonyName(harmony: PaletteKind): string {
+  const names: Record<PaletteKind, string> = {
     complementary: 'Complementary',
     analogous: 'Analogous',
     triadic: 'Triadic',
     'split-complementary': 'Split-Complementary',
     tetradic: 'Tetradic',
     monochromatic: 'Monochromatic',
-    '60-30-10': '60-30-10'
+    '60-30-10': '60-30-10',
+    freeform: 'Freeform'
   };
   return names[harmony];
 }
@@ -260,12 +262,14 @@ export function getHarmonyDescription(harmony: HarmonyType): string {
 /**
  * Tailwind grid class for the palette swatch layout
  */
-export function getHarmonyLayoutClass(harmony: HarmonyType, count: number): string {
+export function getHarmonyLayoutClass(harmony: PaletteKind, count: number): string {
   if (harmony === '60-30-10') {
     return 'grid grid-cols-1 gap-3 sm:grid-cols-[6fr_3fr_1fr]';
   }
 
   switch (count) {
+    case 1:
+      return 'grid grid-cols-1 gap-3';
     case 2:
       return 'grid grid-cols-2 gap-3';
     case 3:
@@ -274,6 +278,10 @@ export function getHarmonyLayoutClass(harmony: HarmonyType, count: number): stri
       return 'grid grid-cols-2 gap-3';
     case 5:
       return 'grid grid-cols-2 gap-3 sm:grid-cols-5';
+    case 6:
+      return 'grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-6';
+    case 7:
+      return 'grid grid-cols-2 gap-3 sm:grid-cols-4 xl:grid-cols-7';
     default:
       return 'grid grid-cols-2 gap-3 sm:grid-cols-3';
   }

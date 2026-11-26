@@ -1,5 +1,4 @@
 <script lang="ts">
-  import { goto } from '$app/navigation';
   import { page } from '$app/state';
   import { getPaletteStoreContext } from '$lib/stores/palette.svelte';
   import { getHarmonyName } from '$lib/color/harmonies';
@@ -8,6 +7,11 @@
   import * as Dialog from '$lib/components/ui/dialog';
   import { Input } from '$lib/components/ui/input';
   import { Label } from '$lib/components/ui/label';
+  import CopyButton from './CopyButton.svelte';
+  import ArrowUpRight from '@lucide/svelte/icons/arrow-up-right';
+  import Check from '@lucide/svelte/icons/check';
+  import CircleCheck from '@lucide/svelte/icons/circle-check';
+  import Link2 from '@lucide/svelte/icons/link-2';
   import LoaderCircle from '@lucide/svelte/icons/loader-circle';
   import LogIn from '@lucide/svelte/icons/log-in';
   import Save from '@lucide/svelte/icons/save';
@@ -21,13 +25,15 @@
   let name = $state('');
   let loading = $state(false);
   let errorMessage = $state('');
-  let successMessage = $state('');
+  /** The palette this dialog just saved; the studio keeps its state either way. */
+  let saved = $state<SavedPalette | null>(null);
+  const savedUrl = $derived(saved ? `${page.url.origin}/palettes/${saved.slug}` : '');
 
   $effect(() => {
     if (open && !wasOpen) {
       name = `${getHarmonyName(paletteStore.harmony)} palette`;
       errorMessage = '';
-      successMessage = '';
+      saved = null;
     }
     wasOpen = open;
   });
@@ -43,7 +49,6 @@
 
     loading = true;
     errorMessage = '';
-    successMessage = '';
 
     try {
       const response = await fetch('/api/palettes', {
@@ -60,9 +65,8 @@
         throw new Error(body.error?.message ?? 'Unable to save the palette.');
       }
 
-      successMessage = 'Palette saved. Opening its share link…';
-      await new Promise((resolve) => setTimeout(resolve, 250));
-      await goto(`/palettes/${body.palette.slug}`);
+      // Stay put: the palette being worked on is still the user's, so they can keep going.
+      saved = body.palette;
     } catch (error) {
       errorMessage = error instanceof Error ? error.message : 'Unable to save the palette.';
     } finally {
@@ -109,48 +113,89 @@
           <span class="flex-1" style="background: {color.hex}"></span>
         {/each}
       </div>
-      <Dialog.Header>
-        <Dialog.Title class="font-display text-xl">Save palette</Dialog.Title>
-        <Dialog.Description>
-          Create an immutable snapshot and a public link you can share.
-        </Dialog.Description>
-      </Dialog.Header>
+      {#if saved}
+        <Dialog.Header>
+          <Dialog.Title class="font-display flex items-center gap-2 text-xl">
+            <CircleCheck class="size-5 text-emerald-600 dark:text-emerald-400" aria-hidden="true" />
+            Saved
+          </Dialog.Title>
+          <Dialog.Description>
+            <span class="text-foreground font-medium">{saved.name}</span> is in the gallery with
+            exactly these {saved.colors.length} colors. Your workspace is unchanged, so keep going.
+          </Dialog.Description>
+        </Dialog.Header>
 
-      <form class="space-y-4" onsubmit={savePalette}>
-        <div class="space-y-2">
-          <Label for="palette-name">Palette name</Label>
-          <Input
-            id="palette-name"
-            bind:value={name}
-            maxlength={80}
-            autocomplete="off"
-            disabled={loading}
-            aria-invalid={Boolean(errorMessage)}
-            aria-describedby="save-palette-status"
-          />
+        <div class="well flex items-center gap-2 rounded-xl py-1 pr-1 pl-3" role="status">
+          <span class="min-w-0 flex-1 truncate font-mono text-xs">{savedUrl}</span>
+          <CopyButton
+            value={savedUrl}
+            label="share link"
+            class="bg-card hover:bg-muted inline-flex h-8 shrink-0 items-center gap-1.5 rounded-lg px-2.5 text-sm font-medium shadow-[inset_0_1px_0_var(--panel-edge),0_1px_2px_oklch(0_0_0/0.12)] transition-colors"
+          >
+            {#snippet children(copied)}
+              {#if copied}
+                <Check class="size-4" aria-hidden="true" /> Copied
+              {:else}
+                <Link2 class="size-4" aria-hidden="true" /> Copy link
+              {/if}
+            {/snippet}
+          </CopyButton>
         </div>
 
-        <p
-          id="save-palette-status"
-          class={errorMessage ? 'text-destructive text-sm' : 'text-muted-foreground text-sm'}
-          role={errorMessage ? 'alert' : 'status'}
-          aria-live="polite"
-        >
-          {errorMessage || successMessage}
-        </p>
-
-        <Dialog.Footer>
-          <Button type="submit" disabled={loading || Boolean(successMessage)}>
-            {#if loading}
-              <LoaderCircle class="animate-spin" data-icon="inline-start" />
-              Saving…
-            {:else}
-              <Save data-icon="inline-start" />
-              Save and share
-            {/if}
-          </Button>
+        <Dialog.Footer class="gap-2 sm:justify-between">
+          <a
+            href="/palettes/{saved.slug}"
+            class="text-muted-foreground hover:text-foreground inline-flex h-9 items-center gap-1 rounded-lg px-1 text-sm font-medium underline-offset-4 hover:underline"
+          >
+            View saved palette
+            <ArrowUpRight class="size-4" aria-hidden="true" />
+          </a>
+          <Button onclick={() => (open = false)}>Keep editing</Button>
         </Dialog.Footer>
-      </form>
+      {:else}
+        <Dialog.Header>
+          <Dialog.Title class="font-display text-xl">Save palette</Dialog.Title>
+          <Dialog.Description>
+            Saves these exact colors with a public link you can share. Your workspace stays as it is.
+          </Dialog.Description>
+        </Dialog.Header>
+
+        <form class="space-y-4" onsubmit={savePalette}>
+          <div class="space-y-2">
+            <Label for="palette-name">Palette name</Label>
+            <Input
+              id="palette-name"
+              bind:value={name}
+              maxlength={80}
+              autocomplete="off"
+              disabled={loading}
+              aria-invalid={Boolean(errorMessage)}
+              aria-describedby="save-palette-status"
+            />
+          </div>
+
+          <p
+            id="save-palette-status"
+            class={errorMessage ? 'text-destructive text-sm' : 'sr-only'}
+            role={errorMessage ? 'alert' : 'status'}
+            aria-live="polite"
+          >
+            {errorMessage}
+          </p>
+
+          <Dialog.Footer>
+            <Button type="submit" disabled={loading}>
+              {#if loading}
+                <LoaderCircle class="animate-spin" data-icon="inline-start" />
+                Saving…
+              {:else}
+                <Save data-icon="inline-start" />
+                Save
+              {/if}
+            </Button>
+          </Dialog.Footer>
+        </form>
+      {/if}
     </Dialog.Content>
   </Dialog.Root>
 {/if}

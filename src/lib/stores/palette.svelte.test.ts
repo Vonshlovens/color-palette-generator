@@ -9,13 +9,13 @@ describe('createPaletteStore', () => {
     first.setHue(42);
     first.setHarmony('triadic');
 
-    expect(first.snapshot()).toEqual({
+    expect(first.snapshot()).toMatchObject({
       hue: 42,
       saturation: 70,
       lightness: 50,
       harmony: 'triadic'
     });
-    expect(second.snapshot()).toEqual({
+    expect(second.snapshot()).toMatchObject({
       hue: 220,
       saturation: 70,
       lightness: 50,
@@ -31,7 +31,7 @@ describe('createPaletteStore', () => {
       harmony: 'analogous'
     });
 
-    expect(store.snapshot()).toEqual({
+    expect(store.snapshot()).toMatchObject({
       hue: 15,
       saturation: 80,
       lightness: 35,
@@ -143,6 +143,52 @@ describe('createPaletteStore', () => {
 
     store.setHarmony('complementary');
     expect(store.selectedIndex).toBe(0);
+  });
+
+  describe('exact swatches', () => {
+    it('snapshots the on-screen swatches, not the regenerated seed palette', () => {
+      // Eric's bug: blues were locked, then the seed hue moved to green. The old snapshot held
+      // only the seed, so the saved palette came back green.
+      const store = createPaletteStore({ hue: 214, saturation: 70, lightness: 50, harmony: 'monochromatic' });
+      for (const index of [0, 1, 2, 3, 4]) store.toggleLock(index);
+      const blues = store.colors.map((color) => color.hsl);
+      store.setHue(99);
+
+      const snapshot = store.snapshot();
+      expect(snapshot.hue).toBe(99);
+      expect(snapshot.colors).toEqual(blues);
+      expect(blues.every((hsl) => hsl.h === 214)).toBe(true);
+    });
+
+    it('keeps a lightness nudge that the harmony cannot reproduce', () => {
+      const store = createPaletteStore({ hue: 220, saturation: 70, lightness: 50, harmony: 'monochromatic' });
+      store.selectColor(2);
+      store.setSelectedLightness(store.selectedColor.hsl.l + 4);
+      expect(store.snapshot().colors?.[2]).toEqual({ h: 220, s: 100, l: 54 });
+    });
+
+    it('restores exact swatches from a snapshot, locking the ones the seed would change', () => {
+      const colors = [
+        { h: 214, s: 90, l: 25 },
+        { h: 99, s: 85, l: 40 },
+        { h: 99, s: 100, l: 50 },
+        { h: 99, s: 70, l: 65 },
+        { h: 99, s: 50, l: 80 }
+      ];
+      const store = createPaletteStore();
+      expect(store.load({ hue: 99, saturation: 93, lightness: 50, harmony: 'monochromatic', colors })).toBe(true);
+
+      expect(store.colors.map((color) => color.hsl)).toEqual(colors);
+      expect([0, 1, 2, 3, 4].map((i) => store.isLocked(i))).toEqual([true, false, false, false, false]);
+    });
+
+    it('refuses snapshots whose swatch count does not match the harmony', () => {
+      const store = createPaletteStore();
+      expect(
+        store.hydrate({ hue: 1, saturation: 2, lightness: 3, harmony: 'triadic', colors: [{ h: 1, s: 2, l: 3 }] })
+      ).toBe(false);
+      expect(store.harmony).toBe('complementary');
+    });
   });
 
   describe('history', () => {

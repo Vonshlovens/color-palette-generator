@@ -1,4 +1,4 @@
-import type { Color, HarmonyType } from '$lib/types';
+import type { Color, PaletteKind } from '$lib/types';
 import { getContrastRatio } from './conversions';
 import { generateShadeScale } from './scales';
 
@@ -37,7 +37,7 @@ function pickInk(background: Color, candidates: Color[]): string {
  * other harmonies get a neutral ramp tinted by the anchor color, with palette colors as the
  * primary, secondary, and accent brand roles.
  */
-export function deriveUiRoles(colors: Color[], harmony: HarmonyType, mode: PreviewMode): UiRoles {
+export function deriveUiRoles(colors: Color[], harmony: PaletteKind, mode: PreviewMode): UiRoles {
   const isRule = harmony === '60-30-10';
   const isMono = harmony === 'monochromatic';
   const last = colors.length - 1;

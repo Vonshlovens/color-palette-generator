@@ -1,13 +1,13 @@
 <script lang="ts">
-  import { getPaletteStoreContext } from '$lib/stores/palette.svelte';
+  import { getHarmonyStoreContext } from '$lib/stores/palette.svelte';
   import { generatePalette, getHarmonyName } from '$lib/color/harmonies';
   import { PALETTE_PRESETS } from '$lib/color/presets';
 
-  const paletteStore = getPaletteStoreContext();
+  const paletteStore = getHarmonyStoreContext();
 
   const presets = PALETTE_PRESETS.map((preset) => ({
     ...preset,
-    colors: generatePalette(
+    hexes: generatePalette(
       { h: preset.hue, s: preset.saturation, l: preset.lightness },
       preset.harmony
     ).map((color) => color.hex)
@@ -36,7 +36,7 @@
       <li class="snap-start">
         <button
           type="button"
-          onclick={() => paletteStore.load(preset)}
+          onclick={() => paletteStore.load({ hue: preset.hue, saturation: preset.saturation, lightness: preset.lightness, harmony: preset.harmony })}
           aria-pressed={active}
           title={preset.note}
           class="panel group block w-40 overflow-hidden !rounded-2xl text-left transition-[transform,box-shadow] duration-200 outline-none hover:-translate-y-0.5 focus-visible:ring-2 focus-visible:ring-ring {active
@@ -44,7 +44,7 @@
             : ''}"
         >
           <span class="flex h-14" aria-hidden="true">
-            {#each preset.colors as hex, index}
+            {#each preset.hexes as hex, index}
               <span
                 class="h-full grow-(--w) transition-[flex-grow] duration-300 ease-out group-hover:first:grow-[calc(var(--w)*1.8)]"
                 style="--w: {preset.harmony === '60-30-10' ? [6, 3, 1][index] : 1}; background: {hex}"

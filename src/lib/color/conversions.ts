@@ -122,6 +122,26 @@ export function normalizeHue(h: number): number {
   return ((h % 360) + 360) % 360;
 }
 
+/** Whether every channel is a finite number inside its range (H 0–360, S and L 0–100). */
+export function isValidHsl(hsl: HSL): boolean {
+  return (
+    Number.isFinite(hsl.h) &&
+    hsl.h >= 0 &&
+    hsl.h <= 360 &&
+    Number.isFinite(hsl.s) &&
+    hsl.s >= 0 &&
+    hsl.s <= 100 &&
+    Number.isFinite(hsl.l) &&
+    hsl.l >= 0 &&
+    hsl.l <= 100
+  );
+}
+
+/** Whether two HSL values are channel-for-channel identical. */
+export function hslEqual(a: HSL, b: HSL): boolean {
+  return a.h === b.h && a.s === b.s && a.l === b.l;
+}
+
 /**
  * Clamp value between min and max
  */

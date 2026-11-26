@@ -1,5 +1,5 @@
 <script lang="ts">
-  import type { Color, HarmonyType } from '$lib/types';
+  import type { Color, PaletteKind } from '$lib/types';
   import {
     buildExport,
     EXPORT_FORMAT_INFO,
@@ -13,7 +13,7 @@
 
   interface Props {
     colors: Color[];
-    harmony: HarmonyType;
+    harmony: PaletteKind;
     name: string;
   }
 

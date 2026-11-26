@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { createPaletteSchema, listPalettesQuerySchema, paletteSlugSchema } from './validation';
+import { generatePalette } from '$lib/color/harmonies';
+import {
+  createPaletteSchema,
+  listPalettesQuerySchema,
+  paletteSlugSchema,
+  renamePaletteSchema
+} from './validation';
 
 const validPalette = {
   name: 'Ocean Sunset',
@@ -19,7 +25,7 @@ describe('createPaletteSchema', () => {
         saturation: 100,
         lightness: 0
       })
-    ).toEqual({
+    ).toMatchObject({
       ...validPalette,
       name: 'Ocean Sunset',
       hue: 0,
@@ -54,6 +60,65 @@ describe('createPaletteSchema', () => {
 
   it('rejects unknown request properties', () => {
     expect(createPaletteSchema.safeParse({ ...validPalette, id: 'internal' }).success).toBe(false);
+  });
+});
+
+describe('createPaletteSchema colors', () => {
+  const swatch = (h: number) => ({ h, s: 50, l: 50 });
+
+  it('keeps the exact swatches sent with a harmony palette', () => {
+    const colors = [swatch(1), swatch(2), swatch(3)];
+    expect(createPaletteSchema.parse({ ...validPalette, colors }).colors).toEqual(colors);
+  });
+
+  it('generates swatches for clients that send only the seed', () => {
+    expect(createPaletteSchema.parse(validPalette).colors).toEqual(
+      generatePalette({ h: 210, s: 70, l: 50 }, 'triadic').map((color) => color.hsl)
+    );
+  });
+
+  it('rejects a swatch count that does not match the harmony', () => {
+    const result = createPaletteSchema.safeParse({ ...validPalette, colors: [swatch(1), swatch(2)] });
+    expect(result.success).toBe(false);
+  });
+
+  it('accepts one to seven freeform swatches and seeds from the first', () => {
+    for (const count of [1, 7]) {
+      const colors = Array.from({ length: count }, (_, i) => swatch(i * 40 + 5));
+      expect(createPaletteSchema.parse({ name: 'Free', harmony: 'freeform', colors })).toEqual({
+        name: 'Free',
+        harmony: 'freeform',
+        colors,
+        hue: 5,
+        saturation: 50,
+        lightness: 50
+      });
+    }
+  });
+
+  it.each([0, 8])('rejects %i freeform swatches', (count) => {
+    const colors = Array.from({ length: count }, (_, i) => swatch(i));
+    expect(createPaletteSchema.safeParse({ name: 'Free', harmony: 'freeform', colors }).success).toBe(false);
+  });
+
+  it('rejects freeform palettes without colors, with seed fields, or with bad channels', () => {
+    expect(createPaletteSchema.safeParse({ name: 'Free', harmony: 'freeform' }).success).toBe(false);
+    expect(
+      createPaletteSchema.safeParse({ name: 'Free', harmony: 'freeform', hue: 3, colors: [swatch(1)] }).success
+    ).toBe(false);
+    expect(
+      createPaletteSchema.safeParse({ name: 'Free', harmony: 'freeform', colors: [{ h: 1, s: 101, l: 5 }] })
+        .success
+    ).toBe(false);
+  });
+});
+
+describe('renamePaletteSchema', () => {
+  it('trims names and rejects empty, long, or extra fields', () => {
+    expect(renamePaletteSchema.parse({ name: '  Blues  ' })).toEqual({ name: 'Blues' });
+    expect(renamePaletteSchema.safeParse({ name: '   ' }).success).toBe(false);
+    expect(renamePaletteSchema.safeParse({ name: 'x'.repeat(81) }).success).toBe(false);
+    expect(renamePaletteSchema.safeParse({ name: 'ok', hue: 4 }).success).toBe(false);
   });
 });
 

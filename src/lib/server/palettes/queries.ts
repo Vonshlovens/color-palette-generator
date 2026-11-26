@@ -15,7 +15,7 @@ function createSlug(): string {
 
 export async function createPalette(
   database: Database,
-  input: CreatePaletteInput & { createdBy: string }
+  input: CreatePaletteInput & { createdBy: string | null }
 ): Promise<PaletteRecord> {
   const now = new Date();
 
@@ -30,6 +30,7 @@ export async function createPalette(
         saturation: input.saturation,
         lightness: input.lightness,
         harmony: input.harmony,
+        colors: input.colors,
         createdBy: input.createdBy,
         createdAt: now,
         updatedAt: now
@@ -77,4 +78,25 @@ export async function getPaletteBySlug(
   return database.query.palettes.findFirst({
     where: eq(palettes.slug, slug)
   });
+}
+
+export async function renamePalette(
+  database: Database,
+  slug: string,
+  name: string
+): Promise<PaletteRecord | undefined> {
+  const [updated] = await database
+    .update(palettes)
+    .set({ name, updatedAt: new Date() })
+    .where(eq(palettes.slug, slug))
+    .returning();
+  return updated;
+}
+
+export async function deletePalette(database: Database, slug: string): Promise<boolean> {
+  const deleted = await database
+    .delete(palettes)
+    .where(eq(palettes.slug, slug))
+    .returning({ id: palettes.id });
+  return deleted.length > 0;
 }

@@ -12,7 +12,7 @@ export const load: PageServerLoad = async ({ locals }) => {
     });
 
     return {
-      palettes: palettes.map(toSavedPalette),
+      palettes: palettes.map((record) => toSavedPalette(record, locals.user)),
       hasMore,
       pageSize: PALETTE_LIST_DEFAULT_LIMIT
     };

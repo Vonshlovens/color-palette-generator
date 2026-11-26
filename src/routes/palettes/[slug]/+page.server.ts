@@ -22,5 +22,5 @@ export const load: PageServerLoad = async ({ params, locals }) => {
     error(404, 'Palette not found');
   }
 
-  return { palette: toSavedPalette(record) };
+  return { palette: toSavedPalette(record, locals.user) };
 };

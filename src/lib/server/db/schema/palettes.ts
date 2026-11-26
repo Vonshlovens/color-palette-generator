@@ -1,6 +1,6 @@
 import { sql } from 'drizzle-orm';
 import { check, index, integer, real, sqliteTable, text, uniqueIndex } from 'drizzle-orm/sqlite-core';
-import { HARMONY_TYPES, type HarmonyType } from '$lib/types';
+import { PALETTE_KINDS, type HSL, type PaletteKind } from '$lib/types';
 import { user } from './auth';
 
 export const palettes = sqliteTable(
@@ -12,7 +12,12 @@ export const palettes = sqliteTable(
     hue: real('hue').notNull(),
     saturation: real('saturation').notNull(),
     lightness: real('lightness').notNull(),
-    harmony: text('harmony', { enum: HARMONY_TYPES }).$type<HarmonyType>().notNull(),
+    harmony: text('harmony', { enum: PALETTE_KINDS }).$type<PaletteKind>().notNull(),
+    /**
+     * The exact swatches as a JSON array of HSL objects. Null on rows saved before this column
+     * existed; those are derived from hue/saturation/lightness/harmony when read.
+     */
+    colors: text('colors', { mode: 'json' }).$type<HSL[]>(),
     createdBy: text('created_by').references(() => user.id, { onDelete: 'set null' }),
     createdAt: integer('created_at', { mode: 'timestamp_ms' })
       .notNull()
@@ -31,7 +36,15 @@ export const palettes = sqliteTable(
     check('palettes_lightness_check', sql`${table.lightness} between 0 and 100`),
     check(
       'palettes_harmony_check',
-      sql`${table.harmony} in ('complementary', 'analogous', 'triadic', 'split-complementary', 'tetradic', 'monochromatic', '60-30-10')`
+      sql`${table.harmony} in ('complementary', 'analogous', 'triadic', 'split-complementary', 'tetradic', 'monochromatic', '60-30-10', 'freeform')`
+    ),
+    check(
+      'palettes_colors_check',
+      sql`${table.colors} is null or (json_valid(${table.colors}) and json_type(${table.colors}) = 'array' and json_array_length(${table.colors}) between 1 and 7)`
+    ),
+    check(
+      'palettes_freeform_colors_check',
+      sql`${table.harmony} <> 'freeform' or ${table.colors} is not null`
     )
   ]
 );

@@ -1,4 +1,4 @@
-import type { Color, HarmonyType } from '$lib/types';
+import type { Color, PaletteKind } from '$lib/types';
 import { getContrastTextColor } from './conversions';
 import { getHarmonyName, getSwatchLabel, getSwatchTokenName } from './harmonies';
 import { formatOklch } from './oklch';
@@ -45,7 +45,7 @@ export const EXPORT_FORMAT_INFO: Record<
 
 export interface ExportInput {
   name: string;
-  harmony: HarmonyType;
+  harmony: PaletteKind;
   colors: Color[];
 }
 
@@ -189,7 +189,7 @@ function toSvg(input: ExportInput): string {
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" role="img" aria-label="${escapeXml(input.name)} color palette">
   <rect width="${width}" height="${height}" fill="#ececec"/>
   <text x="${pad}" y="96" fill="#1c1c1c" font-family="${font}" font-size="48" font-weight="600" letter-spacing="-1">${escapeXml(input.name)}</text>
-  <text x="${width - pad}" y="96" fill="#5c5c5c" font-family="${font}" font-size="20" text-anchor="end">${escapeXml(getHarmonyName(input.harmony))} harmony</text>
+  <text x="${width - pad}" y="96" fill="#5c5c5c" font-family="${font}" font-size="20" text-anchor="end">${escapeXml(getHarmonyName(input.harmony))} ${input.harmony === 'freeform' ? 'palette' : 'harmony'}</text>
 ${chips}
 </svg>
 `;

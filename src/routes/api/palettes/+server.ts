@@ -1,33 +1,25 @@
 import { json } from '@sveltejs/kit';
 import { createPalette, listPalettes } from '$lib/server/palettes/queries';
 import { toSavedPalette } from '$lib/server/palettes/mapping';
-import { createPaletteSchema, listPalettesQuerySchema } from '$lib/server/palettes/validation';
+import {
+  createPaletteSchema,
+  invalidRequest,
+  listPalettesQuerySchema
+} from '$lib/server/palettes/validation';
 import type { RequestHandler } from './$types';
 
 export const GET: RequestHandler = async ({ url, locals }) => {
   const result = listPalettesQuerySchema.safeParse(Object.fromEntries(url.searchParams));
 
   if (!result.success) {
-    return json(
-      {
-        error: {
-          code: 'INVALID_REQUEST',
-          message: 'Pagination parameters are invalid',
-          issues: result.error.issues.map((issue) => ({
-            field: issue.path.map(String).join('.'),
-            message: issue.message
-          }))
-        }
-      },
-      { status: 400 }
-    );
+    return json(invalidRequest('Pagination parameters are invalid', result.error), { status: 400 });
   }
 
   try {
     const { palettes, hasMore } = await listPalettes(locals.db, result.data);
 
     return json({
-      palettes: palettes.map(toSavedPalette),
+      palettes: palettes.map((record) => toSavedPalette(record, locals.user)),
       pagination: {
         limit: result.data.limit,
         offset: result.data.offset,
@@ -66,24 +58,13 @@ export const POST: RequestHandler = async ({ request, locals }) => {
   const result = createPaletteSchema.safeParse(payload);
 
   if (!result.success) {
-    return json(
-      {
-        error: {
-          code: 'INVALID_REQUEST',
-          message: 'Palette data is invalid',
-          issues: result.error.issues.map((issue) => ({
-            field: issue.path.map(String).join('.'),
-            message: issue.message
-          }))
-        }
-      },
-      { status: 400 }
-    );
+    return json(invalidRequest('Palette data is invalid', result.error), { status: 400 });
   }
 
   try {
     const palette = toSavedPalette(
-      await createPalette(locals.db, { ...result.data, createdBy: locals.user.id })
+      await createPalette(locals.db, { ...result.data, createdBy: locals.user.id }),
+      locals.user
     );
 
     return json(

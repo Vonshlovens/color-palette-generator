@@ -90,7 +90,11 @@
         {label}
       </h2>
       <p class="text-muted-foreground text-xs">
-        {locked ? 'Locked, so edits stay on this swatch' : 'Siblings follow the harmony as you edit'}
+        {#if paletteStore.harmony === 'freeform'}
+          {locked ? 'Locked, so shuffles skip this swatch' : 'Edits stay on this swatch'}
+        {:else}
+          {locked ? 'Locked, so edits stay on this swatch' : 'Siblings follow the harmony as you edit'}
+        {/if}
       </p>
     </div>
     <button

@@ -11,7 +11,9 @@ A visual tool for generating harmonious color palettes using color theory algori
 - **Live Preview**: Real-time palette generation
 - **One-Click Copy**: Click any swatch to copy its HEX value
 - **Export Options**: CSS variables, Tailwind config, or JSON
-- **Saved Palettes (v2)**: Create immutable snapshots with public share links
+- **Freeform** (`/freeform`): 1–7 swatches with no harmony rule; Space randomizes every unlocked swatch
+- **Saved Palettes (v2)**: Save the exact swatches on screen with a public share link; the creator
+  or owner can rename or delete them
 - **Gallery (v3)**: Browse database-backed saved palettes at `/palettes`
 - **Owner-approved accounts**: Magic-link sign-in; saving palettes requires an account the owner
   approved at `/approvals`. Generating palettes stays in the browser and needs no account.
@@ -144,12 +146,18 @@ openssl rand -base64 32 | bunx wrangler secret put BETTER_AUTH_SECRET
 bunx wrangler secret put RESEND_API_KEY
 ```
 
-Saved snapshots persist only their name, HSL generator inputs, harmony type, public slug, and
-timestamps. Generated HEX/RGB colors are always derived at runtime. The public API is:
+Saved palettes store their name, the exact swatches as a JSON array of HSL values (`colors`, 1–7),
+the harmony (or `freeform`), the HSL generator seed, public slug, and timestamps. Rows saved before
+`colors` existed have it null and their swatches are generated from the seed when read. HEX/RGB
+values are derived at runtime. The public API is:
 
-- `POST /api/palettes` — create a new immutable snapshot (approved, signed-in users only; 401 otherwise)
-- `GET /api/palettes` — list public snapshots, newest first (`limit` ≤ 50, `offset` pagination)
-- `GET /api/palettes/:slug` — retrieve a public snapshot
+- `POST /api/palettes` — save a palette (approved, signed-in users only; 401 otherwise). Harmony
+  palettes send `{name, hue, saturation, lightness, harmony, colors?}`; freeform palettes send
+  `{name, harmony: "freeform", colors}`.
+- `GET /api/palettes` — list public palettes, newest first (`limit` ≤ 50, `offset` pagination)
+- `GET /api/palettes/:slug` — retrieve a public palette
+- `PATCH /api/palettes/:slug` — rename (`{name}`); `DELETE /api/palettes/:slug` — delete. Both
+  require the palette's creator or the owner (401 signed out, 403 otherwise).
 - `GET /health` — report application and database availability
 
 ## Project Structure

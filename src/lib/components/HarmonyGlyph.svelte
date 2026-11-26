@@ -1,9 +1,9 @@
 <script lang="ts">
   import { HARMONY_ANGLES } from '$lib/color/harmonies';
-  import type { HarmonyType } from '$lib/types';
+  import type { PaletteKind } from '$lib/types';
 
   interface Props {
-    harmony: HarmonyType;
+    harmony: PaletteKind;
     /** Fill each point with the palette color at that slot; falls back to currentColor. */
     colors?: string[];
     class?: string;
@@ -11,8 +11,16 @@
 
   let { harmony, colors, class: className = 'size-6' }: Props = $props();
 
+  /** Freeform has no rule, so its glyph is a loose scatter of swatches. */
+  const SCATTER = [
+    { x: 8.4, y: 8.6, r: 2.4 },
+    { x: 15.6, y: 9.8, r: 1.9 },
+    { x: 10.6, y: 15.8, r: 2.1 },
+    { x: 16.2, y: 15.4, r: 1.5 }
+  ];
+
   const points = $derived(
-    HARMONY_ANGLES[harmony].map((angle) => {
+    (harmony === 'freeform' ? [] : HARMONY_ANGLES[harmony]).map((angle) => {
       const radians = (angle * Math.PI) / 180;
       return { x: 12 + 8.5 * Math.sin(radians), y: 12 - 8.5 * Math.cos(radians) };
     })
@@ -24,7 +32,17 @@
 
 <svg viewBox="0 0 24 24" class={className} aria-hidden="true" fill="none">
   <circle cx="12" cy="12" r="8.5" stroke="currentColor" stroke-opacity="0.28" stroke-width="1.25" />
-  {#if isMono}
+  {#if harmony === 'freeform'}
+    {#each SCATTER as dot, index}
+      <circle
+        cx={dot.x}
+        cy={dot.y}
+        r={dot.r}
+        fill={colors?.[index % colors.length] ?? 'currentColor'}
+        opacity={colors ? 1 : 1 - index * 0.18}
+      />
+    {/each}
+  {:else if isMono}
     {#each [8.5, 6, 3.5] as radius, index}
       <circle
         cx="12"

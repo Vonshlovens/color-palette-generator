@@ -1,10 +1,10 @@
 <script lang="ts">
   import { HARMONY_TYPES } from '$lib/types';
-  import { getPaletteStoreContext } from '$lib/stores/palette.svelte';
+  import { getHarmonyStoreContext } from '$lib/stores/palette.svelte';
   import { getHarmonyDescription, getHarmonyName, HARMONY_COLOR_COUNTS } from '$lib/color/harmonies';
   import HarmonyGlyph from './HarmonyGlyph.svelte';
 
-  const paletteStore = getPaletteStoreContext();
+  const paletteStore = getHarmonyStoreContext();
   const swatchHexes = $derived(paletteStore.colors.map((color) => color.hex));
 
   function handleKeyboard(event: KeyboardEvent) {

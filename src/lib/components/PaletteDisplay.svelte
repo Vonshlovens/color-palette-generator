@@ -1,5 +1,7 @@
 <script lang="ts">
   import { getPaletteStoreContext } from '$lib/stores/palette.svelte';
+  import { FreeformStore } from '$lib/stores/freeform.svelte';
+  import { MAX_PALETTE_COLORS } from '$lib/types';
   import { getHarmonyLayoutClass, getHarmonyName, getSwatchLabel } from '$lib/color/harmonies';
   import * as Dialog from '$lib/components/ui/dialog';
   import ColorSwatch from './ColorSwatch.svelte';
@@ -9,17 +11,12 @@
   import Check from '@lucide/svelte/icons/check';
   import CodeXml from '@lucide/svelte/icons/code-xml';
   import Copy from '@lucide/svelte/icons/copy';
-
-  interface Props {
-    /** Name used for exports; defaults to the harmony name. */
-    name?: string;
-  }
-
-  let { name }: Props = $props();
+  import Plus from '@lucide/svelte/icons/plus';
 
   const paletteStore = getPaletteStoreContext();
+  const freeform = paletteStore instanceof FreeformStore ? paletteStore : null;
   const layoutClass = $derived(getHarmonyLayoutClass(paletteStore.harmony, paletteStore.colors.length));
-  const exportName = $derived(name ?? `${getHarmonyName(paletteStore.harmony)} palette`);
+  const exportName = $derived(`${getHarmonyName(paletteStore.harmony)} palette`);
 
   function nudge(index: number, delta: number) {
     paletteStore.selectColor(index);
@@ -37,10 +34,26 @@
         {getHarmonyName(paletteStore.harmony)}
       </h2>
       <p class="text-muted-foreground mt-0.5 text-sm">
-        Select a swatch to edit it. Lock the ones you want to keep.
+        {#if freeform}
+          {paletteStore.colors.length} of {MAX_PALETTE_COLORS} colors. Select one to edit it; lock the
+          ones you want to keep.
+        {:else}
+          Select a swatch to edit it. Lock the ones you want to keep.
+        {/if}
       </p>
     </div>
     <div class="flex flex-wrap items-center gap-2">
+      {#if freeform}
+        <button
+          type="button"
+          class={action + ' disabled:pointer-events-none disabled:opacity-45'}
+          onclick={() => freeform.addColor()}
+          disabled={!freeform.canAdd}
+          title={freeform.canAdd ? 'Add a random color' : `Palettes hold up to ${MAX_PALETTE_COLORS} colors`}
+        >
+          <Plus class="size-4" aria-hidden="true" /> Add color
+        </button>
+      {/if}
       <SavePalette />
       <CopyButton
         value={paletteStore.colors.map((color) => color.hex).join('\n')}
@@ -92,6 +105,7 @@
         onSelect={(i) => paletteStore.selectColor(i)}
         onToggleLock={(i) => paletteStore.toggleLock(i)}
         onNudge={nudge}
+        onRemove={freeform?.canRemove ? (i) => freeform.removeColor(i) : undefined}
       />
     {/each}
   </div>
@@ -99,7 +113,7 @@
   {#if paletteStore.lockedCount > 0}
     <div class="flex flex-wrap items-center justify-between gap-2 text-sm">
       <p class="text-muted-foreground">
-        {paletteStore.lockedCount} locked. Locked swatches ignore shuffles and harmony edits.
+        {paletteStore.lockedCount} locked. Locked swatches ignore shuffles{freeform ? '' : ' and harmony edits'}.
       </p>
       <button
         type="button"
