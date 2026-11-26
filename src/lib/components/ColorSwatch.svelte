@@ -1,181 +1,156 @@
 <script lang="ts">
   import type { Color } from '$lib/types';
-  import { getContrastRatio, getContrastTextColor } from '$lib/color/conversions';
-  import * as Tooltip from '$lib/components/ui/tooltip';
-  import Check from '@lucide/svelte/icons/check';
-  import Copy from '@lucide/svelte/icons/copy';
+  import { getContrastRatio, getContrastTextColor, getWcagLevel } from '$lib/color/conversions';
+  import { formatOklch } from '$lib/color/oklch';
+  import CopyButton from './CopyButton.svelte';
   import Lock from '@lucide/svelte/icons/lock';
   import LockOpen from '@lucide/svelte/icons/lock-open';
+  import Minus from '@lucide/svelte/icons/minus';
+  import Plus from '@lucide/svelte/icons/plus';
 
   interface Props {
     color: Color;
     index: number;
-    size?: 'small' | 'medium' | 'large';
-    showLabel?: boolean;
-    roleLabel?: string;
+    /** Role of this slot in the harmony, e.g. "Complement". */
+    label: string;
     locked?: boolean;
     selected?: boolean;
     onSelect?: (index: number) => void;
-    onCopy?: (index: number) => void;
     onToggleLock?: (index: number) => void;
+    /** Fine-tune lightness by a signed percentage. */
+    onNudge?: (index: number, delta: number) => void;
   }
 
   let {
     color,
     index,
-    size = 'large',
-    showLabel = true,
-    roleLabel,
+    label,
     locked = false,
     selected = false,
     onSelect,
-    onCopy,
-    onToggleLock
+    onToggleLock,
+    onNudge
   }: Props = $props();
 
-  let copied = $state(false);
-
-  async function copyToClipboard(event: MouseEvent) {
-    event.preventDefault();
-    event.stopPropagation();
-    try {
-      await navigator.clipboard.writeText(color.hex);
-      copied = true;
-      setTimeout(() => {
-        copied = false;
-      }, 1500);
-      onCopy?.(index);
-    } catch (err) {
-      console.error('Failed to copy:', err);
-    }
-  }
-
-  function handleSelect() {
-    onSelect?.(index);
-  }
-
-  function handleLockClick(event: MouseEvent) {
-    event.preventDefault();
-    event.stopPropagation();
-    onToggleLock?.(index);
-  }
-
-  const textColor = $derived(getContrastTextColor(color.rgb));
-  const foreground = $derived(textColor === 'dark' ? '#111827' : '#ffffff');
-  const whiteContrast = $derived(getContrastRatio(color.rgb, { r: 255, g: 255, b: 255 }));
-  const blackContrast = $derived(getContrastRatio(color.rgb, { r: 0, g: 0, b: 0 }));
-  const sizeClass = $derived(
-    {
-      small: 'min-h-28',
-      medium: 'min-h-36',
-      large: 'min-h-48'
-    }[size]
-  );
-  const label = $derived(roleLabel ?? `Color ${index + 1}`);
+  const dark = $derived(getContrastTextColor(color.rgb) === 'dark');
+  const ink = $derived(dark ? 'oklch(0.18 0.01 264)' : '#ffffff');
+  const contrast = $derived([
+    { name: 'White', ratio: getContrastRatio(color.rgb, { r: 255, g: 255, b: 255 }) },
+    { name: 'Black', ratio: getContrastRatio(color.rgb, { r: 0, g: 0, b: 0 }) }
+  ]);
+  const chip =
+    'grid size-8 place-items-center rounded-lg backdrop-blur-sm transition-[opacity,background-color] outline-none hover:bg-current/15 focus-visible:ring-2 focus-visible:ring-current';
 </script>
 
-<Tooltip.Root>
-  <Tooltip.Trigger>
-    {#snippet child({ props })}
-      <div
-        {...props}
-        class="{sizeClass} group relative flex w-full min-w-0 flex-col justify-between overflow-hidden rounded-xl border p-3 text-left shadow-sm transition-all hover:-translate-y-1 hover:shadow-lg {selected
-          ? 'ring-2 ring-foreground ring-offset-2 ring-offset-background'
-          : locked
-            ? 'ring-2 ring-white/80 ring-offset-2 ring-offset-black/20'
+<article
+  class="group @container relative isolate flex min-h-52 min-w-0 flex-col justify-between overflow-hidden rounded-[1.375rem] p-3.5 transition-[background-color,color,transform,box-shadow] duration-300 ease-out sm:min-h-64 {selected
+    ? 'outline-foreground -translate-y-1 outline-2 outline-offset-[3px]'
+    : 'hover:-translate-y-0.5'}"
+  style="background-color: {color.hex}; color: {ink}; box-shadow: inset 0 0 0 1px oklch(0 0 0 / 0.08), inset 0 1px 0 oklch(1 0 0 / 0.22), 0 {selected
+    ? '18px 36px -18px'
+    : '8px 20px -14px'} color-mix(in oklab, {color.hex} 70%, black);"
+  aria-label="{label}, {color.hex}"
+>
+  <!-- The whole card selects; controls sit above it. -->
+  <button
+    type="button"
+    class="absolute inset-0 -z-10 rounded-[inherit] outline-none focus-visible:ring-3 focus-visible:ring-current focus-visible:ring-inset"
+    onclick={() => onSelect?.(index)}
+    aria-pressed={selected}
+    aria-label="Edit {label}, {color.hex}"
+  ></button>
+  <!-- Soft sheen so each card reads as a physical chip. -->
+  <span
+    class="pointer-events-none absolute inset-0 -z-10 bg-[linear-gradient(160deg,oklch(1_0_0/0.16),transparent_38%)]"
+    aria-hidden="true"
+  ></span>
+
+  <div class="pointer-events-none flex items-start justify-between gap-2">
+    <span class="flex min-w-0 items-center gap-1.5 pt-1.5 pl-1 text-xs font-medium">
+      <span class="truncate">{label}</span>
+      {#if locked}<Lock class="size-3 shrink-0 opacity-80" aria-hidden="true" />{/if}
+    </span>
+    <div class="pointer-events-auto flex shrink-0 items-center">
+      {#if onToggleLock}
+        <button
+          type="button"
+          class="{chip} {locked ? 'opacity-100' : 'opacity-0 group-focus-within:opacity-100 group-hover:opacity-100'}"
+          onclick={() => onToggleLock(index)}
+          aria-pressed={locked}
+          aria-label={locked ? `Unlock ${label}` : `Lock ${label}`}
+          title={locked ? 'Unlock' : 'Lock'}
+        >
+          {#if locked}
+            <Lock class="size-4" aria-hidden="true" />
+          {:else}
+            <LockOpen class="size-4" aria-hidden="true" />
+          {/if}
+        </button>
+      {/if}
+      <CopyButton
+        value={color.hex}
+        label="{label} {color.hex}"
+        class="{chip} opacity-0 group-focus-within:opacity-100 group-hover:opacity-100"
+      />
+    </div>
+  </div>
+
+  <div class="pointer-events-none space-y-2.5 pl-1">
+    <div>
+      <p class="tabular font-mono text-[0.8rem] leading-none font-semibold tracking-tight uppercase @[9rem]:text-lg @[13rem]:text-xl">
+        {color.hex}
+      </p>
+      <p class="tabular mt-1.5 hidden truncate font-mono text-[11px] opacity-75 @[9rem]:block">{formatOklch(color.rgb)}</p>
+    </div>
+
+    <div class="hidden flex-wrap items-center gap-1.5 @[9rem]:flex">
+      {#each contrast as item (item.name)}
+        {@const level = getWcagLevel(item.ratio)}
+        <span
+          class="tabular inline-flex items-center gap-1 rounded-full py-0.5 pr-2 pl-0.5 font-mono text-[10px] {level ===
+          'Fail'
+            ? 'opacity-55'
             : ''}"
-        style="background-color: {color.hex}; color: {foreground}"
-      >
-        <div class="flex w-full items-start justify-between gap-2 text-xs font-medium opacity-90">
+          style="background: color-mix(in oklab, currentColor 12%, transparent)"
+          title="{item.name} text: {item.ratio.toFixed(2)}:1, {level}"
+        >
+          <span
+            class="grid size-4 place-items-center rounded-full font-sans text-[9px] font-semibold"
+            style="background: {item.name === 'White' ? '#fff' : '#000'}; color: {item.name === 'White'
+              ? '#000'
+              : '#fff'}"
+            aria-hidden="true">A</span
+          >
+          {item.ratio.toFixed(1)}
+          {level === 'AA Large' ? 'AA18' : level}
+        </span>
+      {/each}
+
+      {#if onNudge}
+        <span
+          class="pointer-events-auto ml-auto inline-flex items-center rounded-full opacity-0 transition-opacity group-focus-within:opacity-100 group-hover:opacity-100"
+          style="background: color-mix(in oklab, currentColor 12%, transparent)"
+        >
           <button
             type="button"
-            class="min-w-0 flex-1 rounded-md text-left focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
-            onclick={handleSelect}
-            aria-pressed={selected}
-            aria-label="Edit {label}, {color.hex}"
+            class="grid size-6 place-items-center rounded-full outline-none hover:bg-current/15 focus-visible:ring-2 focus-visible:ring-current"
+            onclick={() => onNudge(index, -4)}
+            aria-label="Darken {label}"
+            title="Darken 4%"
           >
-            <span class="block truncate">{roleLabel ?? `0${index + 1}`}</span>
+            <Minus class="size-3" aria-hidden="true" />
           </button>
-          <div class="flex shrink-0 items-center gap-1">
-            {#if onToggleLock}
-              <button
-                type="button"
-                class="rounded-md p-1 transition-opacity hover:bg-black/10 focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none dark:hover:bg-white/15 {locked
-                  ? 'opacity-100'
-                  : 'opacity-0 group-hover:opacity-100 group-focus-within:opacity-100'}"
-                onclick={handleLockClick}
-                aria-pressed={locked}
-                aria-label={locked
-                  ? `Unlock palette color ${index + 1}`
-                  : `Lock palette color ${index + 1}`}
-                title={locked ? 'Unlock color' : 'Lock color'}
-              >
-                {#if locked}
-                  <Lock class="size-4" aria-hidden="true" />
-                {:else}
-                  <LockOpen class="size-4" aria-hidden="true" />
-                {/if}
-              </button>
-            {/if}
-            <button
-              type="button"
-              class="rounded-md p-1 transition-opacity hover:bg-black/10 focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none dark:hover:bg-white/15 {copied
-                ? 'opacity-100'
-                : 'opacity-0 group-hover:opacity-100 group-focus-within:opacity-100'}"
-              onclick={copyToClipboard}
-              aria-label="Copy {color.hex}"
-              title="Copy HEX"
-            >
-              {#if copied}
-                <Check class="size-4" aria-hidden="true" />
-              {:else}
-                <Copy class="size-4" aria-hidden="true" />
-              {/if}
-            </button>
-          </div>
-        </div>
-        {#if showLabel}
           <button
             type="button"
-            class="font-mono text-sm font-semibold tracking-wide uppercase focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
-            onclick={handleSelect}
-            aria-pressed={selected}
-            aria-label="Edit {label}"
+            class="grid size-6 place-items-center rounded-full outline-none hover:bg-current/15 focus-visible:ring-2 focus-visible:ring-current"
+            onclick={() => onNudge(index, 4)}
+            aria-label="Lighten {label}"
+            title="Lighten 4%"
           >
-            {color.hex}
-            {#if selected}
-              <span class="mt-1 block text-[10px] font-medium tracking-wide uppercase opacity-80">
-                Editing
-              </span>
-            {:else if locked}
-              <span class="mt-1 block text-[10px] font-medium tracking-wide uppercase opacity-80">
-                Locked
-              </span>
-            {/if}
+            <Plus class="size-3" aria-hidden="true" />
           </button>
-        {/if}
-      </div>
-    {/snippet}
-  </Tooltip.Trigger>
-  <Tooltip.Content class="block max-w-72 p-3" sideOffset={8}>
-    <div class="space-y-2">
-      <p class="text-xs font-medium">{selected ? 'Selected for editing' : 'Click to edit'}</p>
-      <div class="grid grid-cols-[2.5rem_1fr] gap-x-2 font-mono">
-        <span class="opacity-70">HEX</span><span>{color.hex.toUpperCase()}</span>
-        <span class="opacity-70">RGB</span><span>{color.rgb.r}, {color.rgb.g}, {color.rgb.b}</span>
-        <span class="opacity-70">HSL</span><span>{color.hsl.h}°, {color.hsl.s}%, {color.hsl.l}%</span>
-      </div>
-      <div class="border-background/20 flex gap-3 border-t pt-2">
-        <span>White {whiteContrast.toFixed(2)}:1</span>
-        <span>Black {blackContrast.toFixed(2)}:1</span>
-      </div>
-      {#if locked}
-        <p class="border-background/20 border-t pt-2 text-xs">
-          Locked — stays fixed while you change other colors or randomize.
-        </p>
+        </span>
       {/if}
     </div>
-  </Tooltip.Content>
-</Tooltip.Root>
-
-<span class="sr-only" aria-live="polite">{copied ? `${color.hex} copied` : ''}</span>
+  </div>
+</article>

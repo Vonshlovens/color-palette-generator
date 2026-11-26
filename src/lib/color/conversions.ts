@@ -149,6 +149,19 @@ export function getContrastRatio(foreground: RGB, background: RGB): number {
   return (lighter + 0.05) / (darker + 0.05);
 }
 
+export type WcagLevel = 'AAA' | 'AA' | 'AA Large' | 'Fail';
+
+/**
+ * WCAG 2.2 rating for a contrast ratio: AAA (≥7), AA (≥4.5), AA Large for 18pt+ or
+ * 14pt bold text and UI components (≥3), otherwise Fail.
+ */
+export function getWcagLevel(ratio: number): WcagLevel {
+  if (ratio >= 7) return 'AAA';
+  if (ratio >= 4.5) return 'AA';
+  if (ratio >= 3) return 'AA Large';
+  return 'Fail';
+}
+
 /**
  * Determine if text should be light or dark on a given background
  */

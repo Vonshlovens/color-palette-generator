@@ -210,3 +210,33 @@ colors: {
 - Component padding: 16px
 - Gap between swatches: 12px
 - Section margins: 24px
+
+## Studio components (v4)
+
+The workspace is a sticky tool rail (ColorPicker, HarmonySelector) beside the palette column
+(PaletteDisplay, PresetStrip, PaletteAnalysis, PreviewDeck). Shared chrome lives in
+StudioHeader, rendered by the root layout.
+
+| Component | Purpose |
+|-----------|---------|
+| HarmonyWheel | 2D hue/saturation picker with a draggable marker per swatch |
+| ColorPicker | Selected swatch: wheel, H/S/L sliders, HEX input, RGB/HSL/OKLCH readouts, shuffle, undo/redo, lock |
+| HarmonySelector | Radio list with a harmony glyph and color count per rule |
+| ColorSwatch | Swatch card: role label, HEX, OKLCH, white/black contrast badges, lock, copy, ±lightness |
+| PresetStrip | Curated starting palettes |
+| PaletteAnalysis | Tabs for ShadeExplorer, ContrastMatrix, and VisionSimulator |
+| PreviewDeck | Website, editorial, dashboard, and specimen previews with light/dark and CVD filter |
+| ExportPanel | CSS, Tailwind v4, JSON tokens, SCSS, and SVG card with copy and download |
+| CopyButton | Clipboard button with copied state and live announcement |
+| HarmonyGlyph | Small wheel diagram of a harmony's hue offsets |
+
+### Visual design (v4)
+
+- Light theme "porcelain" and dark theme "graphite": cool, low-chroma neutrals so palette
+  colors read true.
+- Type: Bricolage Grotesque (display), Geist (UI), Geist Mono (values).
+- Panels have a lit top edge and soft two-layer shadow; wells are recessed for readouts and
+  segmented controls.
+- The selected color drives `--studio-accent` (focus rings, slider thumbs, the logo); the first
+  and last palette colors drive the ambient background wash. Both transition smoothly.
+- Motion respects `prefers-reduced-motion`.

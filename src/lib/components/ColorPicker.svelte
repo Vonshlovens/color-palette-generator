@@ -2,39 +2,73 @@
   import { getPaletteStoreContext } from '$lib/stores/palette.svelte';
   import { hexToHsl } from '$lib/color/conversions';
   import { getSwatchLabel } from '$lib/color/harmonies';
-  import { Button } from '$lib/components/ui/button';
-  import * as Card from '$lib/components/ui/card';
-  import { Input } from '$lib/components/ui/input';
-  import { Label } from '$lib/components/ui/label';
-  import RefreshCw from '@lucide/svelte/icons/refresh-cw';
+  import { formatOklch } from '$lib/color/oklch';
+  import CopyButton from './CopyButton.svelte';
+  import HarmonyWheel from './HarmonyWheel.svelte';
+  import Lock from '@lucide/svelte/icons/lock';
+  import LockOpen from '@lucide/svelte/icons/lock-open';
+  import Redo2 from '@lucide/svelte/icons/redo-2';
+  import Shuffle from '@lucide/svelte/icons/shuffle';
+  import Undo2 from '@lucide/svelte/icons/undo-2';
 
   const paletteStore = getPaletteStoreContext();
   let hexInput = $state(paletteStore.selectedColor.hex);
   let hexError = $state(false);
 
-  const selectedLabel = $derived(
-    getSwatchLabel(paletteStore.harmony, paletteStore.selectedIndex)
-  );
-  const selectedHsl = $derived(paletteStore.selectedColor.hsl);
+  const selected = $derived(paletteStore.selectedColor);
+  const hsl = $derived(selected.hsl);
+  const label = $derived(getSwatchLabel(paletteStore.harmony, paletteStore.selectedIndex));
+  const locked = $derived(paletteStore.isLocked(paletteStore.selectedIndex));
 
-  function handleHexChange(e: Event) {
-    const input = e.target as HTMLInputElement;
-    let value = input.value;
-
-    if (!value.startsWith('#')) {
-      value = '#' + value;
+  const channels = $derived([
+    {
+      id: 'hue',
+      name: 'Hue',
+      max: 360,
+      value: hsl.h,
+      unit: '°',
+      track: `linear-gradient(to right, ${Array.from({ length: 7 }, (_, i) => `hsl(${i * 60} ${Math.max(hsl.s, 35)}% ${Math.min(Math.max(hsl.l, 35), 65)}%)`).join(', ')})`,
+      set: (value: number) => paletteStore.setSelectedHue(value)
+    },
+    {
+      id: 'saturation',
+      name: 'Saturation',
+      max: 100,
+      value: hsl.s,
+      unit: '%',
+      track: `linear-gradient(to right, hsl(${hsl.h} 0% ${hsl.l}%), hsl(${hsl.h} 100% ${hsl.l}%))`,
+      set: (value: number) => paletteStore.setSelectedSaturation(value)
+    },
+    {
+      id: 'lightness',
+      name: 'Lightness',
+      max: 100,
+      value: hsl.l,
+      unit: '%',
+      track: `linear-gradient(to right, hsl(${hsl.h} ${hsl.s}% 0%), hsl(${hsl.h} ${hsl.s}% 50%), hsl(${hsl.h} ${hsl.s}% 100%))`,
+      set: (value: number) => paletteStore.setSelectedLightness(value)
     }
+  ]);
 
+  const readouts = $derived([
+    { name: 'RGB', value: `rgb(${selected.rgb.r} ${selected.rgb.g} ${selected.rgb.b})` },
+    { name: 'HSL', value: `hsl(${hsl.h} ${hsl.s}% ${hsl.l}%)` },
+    { name: 'OKLCH', value: formatOklch(selected.rgb) }
+  ]);
+
+  function handleHexInput(event: Event) {
+    let value = (event.target as HTMLInputElement).value.trim();
+    if (!value.startsWith('#')) value = `#${value}`;
     hexInput = value;
 
     if (/^#[0-9A-Fa-f]{6}$/.test(value)) {
-      const hsl = hexToHsl(value);
-      if (hsl) {
-        paletteStore.setSelectedHsl(hsl);
+      const next = hexToHsl(value);
+      if (next) {
+        paletteStore.setSelectedHsl(next);
         hexError = false;
       }
-    } else if (value.length > 1) {
-      hexError = true;
+    } else {
+      hexError = value.length > 1;
     }
   }
 
@@ -44,119 +78,140 @@
   });
 </script>
 
-<Card.Root>
-  <Card.Header class="border-b">
-    <Card.Title>Edit {selectedLabel}</Card.Title>
-    <Card.Description>
-      Click a swatch to select it, then adjust HSL or enter a HEX value. Lock other swatches to keep
-      them fixed.
-    </Card.Description>
-  </Card.Header>
+<section class="panel p-5" aria-labelledby="picker-heading" style="--thumb: {selected.hex}">
+  <div class="mb-5 flex items-center gap-3">
+    <span
+      class="size-9 shrink-0 rounded-xl shadow-[inset_0_0_0_1px_oklch(0_0_0/0.12),inset_0_1px_0_oklch(1_0_0/0.3)] transition-colors duration-300"
+      style="background: {selected.hex}"
+      aria-hidden="true"
+    ></span>
+    <div class="min-w-0 flex-1">
+      <h2 id="picker-heading" class="font-display truncate text-lg leading-tight font-semibold">
+        {label}
+      </h2>
+      <p class="text-muted-foreground text-xs">
+        {locked ? 'Locked, so edits stay on this swatch' : 'Siblings follow the harmony as you edit'}
+      </p>
+    </div>
+    <button
+      type="button"
+      class="hover:bg-muted text-muted-foreground hover:text-foreground grid size-8 place-items-center rounded-lg transition-colors aria-pressed:text-foreground"
+      aria-pressed={locked}
+      aria-label={locked ? `Unlock ${label}` : `Lock ${label}`}
+      title={locked ? 'Unlock (L)' : 'Lock (L)'}
+      onclick={() => paletteStore.toggleLock(paletteStore.selectedIndex)}
+    >
+      {#if locked}
+        <Lock class="size-4" aria-hidden="true" />
+      {:else}
+        <LockOpen class="size-4" aria-hidden="true" />
+      {/if}
+    </button>
+  </div>
 
-  <Card.Content class="space-y-6">
-    <div class="flex items-center gap-4">
-      <div
-        class="size-20 shrink-0 rounded-xl border shadow-sm transition-colors sm:size-24"
-        style="background-color: {paletteStore.selectedColor.hex}"
-        role="img"
-        aria-label="Selected swatch preview: {paletteStore.selectedColor.hex}"
-      ></div>
-      <div class="min-w-0 flex-1 space-y-2">
-        <Label for="selected-color-hex">HEX value</Label>
-        <Input
+  <HarmonyWheel />
+
+  <div class="mt-7 space-y-4">
+    {#each channels as channel (channel.id)}
+      <div class="grid grid-cols-[4.75rem_1fr_2.75rem] items-center gap-3">
+        <label for="channel-{channel.id}" class="text-muted-foreground text-xs font-medium">
+          {channel.name}
+        </label>
+        <input
+          id="channel-{channel.id}"
+          type="range"
+          min="0"
+          max={channel.max}
+          value={channel.value}
+          oninput={(event) => channel.set(Number((event.target as HTMLInputElement).value))}
+          style="background: {channel.track}"
+          class="w-full"
+        />
+        <output for="channel-{channel.id}" class="tabular text-right font-mono text-xs">
+          {channel.value}{channel.unit}
+        </output>
+      </div>
+    {/each}
+  </div>
+
+  <dl class="well mt-6 divide-y rounded-xl text-xs">
+    <div class="flex items-center gap-2 px-3 py-1.5">
+      <dt class="text-muted-foreground w-12 shrink-0 font-medium">
+        <label for="selected-color-hex">HEX</label>
+      </dt>
+      <dd class="min-w-0 flex-1">
+        <input
           id="selected-color-hex"
           type="text"
           value={hexInput}
-          oninput={handleHexChange}
-          class={`font-mono uppercase ${hexError ? 'border-destructive' : ''}`}
+          oninput={handleHexInput}
+          onblur={() => {
+            hexInput = selected.hex;
+            hexError = false;
+          }}
           maxlength={7}
           spellcheck="false"
+          autocomplete="off"
           aria-invalid={hexError}
           aria-describedby={hexError ? 'hex-error' : undefined}
+          class="focus-visible:ring-ring aria-invalid:text-destructive w-full rounded-md bg-transparent py-1 font-mono text-[0.8125rem] font-medium uppercase outline-none focus-visible:ring-2 focus-visible:ring-offset-0"
         />
-        {#if hexError}
-          <p id="hex-error" class="text-destructive text-xs">Enter a six-digit HEX value.</p>
-        {/if}
-      </div>
+      </dd>
+      <CopyButton
+        value={selected.hex}
+        label="HEX {selected.hex}"
+        class="text-muted-foreground hover:text-foreground hover:bg-card grid size-7 place-items-center rounded-md"
+      />
     </div>
-
-    <div class="space-y-5">
-      <div class="grid grid-cols-[1.5rem_1fr_3rem] items-center gap-3">
-        <Label for="hue" class="text-muted-foreground">H</Label>
-        <input
-          id="hue"
-          type="range"
-          min="0"
-          max="360"
-          value={selectedHsl.h}
-          oninput={(e) => paletteStore.setSelectedHue(Number((e.target as HTMLInputElement).value))}
-          aria-label="Hue for {selectedLabel}"
-          class="w-full"
-          style="background: linear-gradient(to right,
-            hsl(0, 70%, 50%),
-            hsl(60, 70%, 50%),
-            hsl(120, 70%, 50%),
-            hsl(180, 70%, 50%),
-            hsl(240, 70%, 50%),
-            hsl(300, 70%, 50%),
-            hsl(360, 70%, 50%))"
+    {#each readouts as readout (readout.name)}
+      <div class="flex items-center gap-2 px-3 py-1.5">
+        <dt class="text-muted-foreground w-12 shrink-0 font-medium">{readout.name}</dt>
+        <dd class="tabular min-w-0 flex-1 truncate py-1 font-mono text-[0.8125rem]">{readout.value}</dd>
+        <CopyButton
+          value={readout.value}
+          label="{readout.name} {readout.value}"
+          class="text-muted-foreground hover:text-foreground hover:bg-card grid size-7 place-items-center rounded-md"
         />
-        <output for="hue" class="text-muted-foreground text-right font-mono text-xs">
-          {selectedHsl.h}°
-        </output>
       </div>
+    {/each}
+  </dl>
+  {#if hexError}
+    <p id="hex-error" class="text-destructive mt-2 text-xs">Enter six hex digits, like #3B82F6.</p>
+  {/if}
 
-      <div class="grid grid-cols-[1.5rem_1fr_3rem] items-center gap-3">
-        <Label for="saturation" class="text-muted-foreground">S</Label>
-        <input
-          id="saturation"
-          type="range"
-          min="0"
-          max="100"
-          value={selectedHsl.s}
-          oninput={(e) =>
-            paletteStore.setSelectedSaturation(Number((e.target as HTMLInputElement).value))}
-          aria-label="Saturation for {selectedLabel}"
-          class="w-full"
-          style="background: linear-gradient(to right,
-            hsl({selectedHsl.h}, 0%, {selectedHsl.l}%),
-            hsl({selectedHsl.h}, 100%, {selectedHsl.l}%))"
-        />
-        <output for="saturation" class="text-muted-foreground text-right font-mono text-xs">
-          {selectedHsl.s}%
-        </output>
-      </div>
-
-      <div class="grid grid-cols-[1.5rem_1fr_3rem] items-center gap-3">
-        <Label for="lightness" class="text-muted-foreground">L</Label>
-        <input
-          id="lightness"
-          type="range"
-          min="0"
-          max="100"
-          value={selectedHsl.l}
-          oninput={(e) =>
-            paletteStore.setSelectedLightness(Number((e.target as HTMLInputElement).value))}
-          aria-label="Lightness for {selectedLabel}"
-          class="w-full"
-          style="background: linear-gradient(to right,
-            hsl({selectedHsl.h}, {selectedHsl.s}%, 0%),
-            hsl({selectedHsl.h}, {selectedHsl.s}%, 50%),
-            hsl({selectedHsl.h}, {selectedHsl.s}%, 100%))"
-        />
-        <output for="lightness" class="text-muted-foreground text-right font-mono text-xs">
-          {selectedHsl.l}%
-        </output>
-      </div>
+  <div class="mt-5 flex items-center gap-2">
+    <button
+      type="button"
+      class="bg-primary text-primary-foreground hover:bg-primary/85 inline-flex h-10 flex-1 items-center justify-center gap-2 rounded-xl text-sm font-medium shadow-[inset_0_1px_0_oklch(1_0_0/0.15),0_1px_2px_oklch(0_0_0/0.2)] transition-[background-color,transform] active:translate-y-px"
+      onclick={() => paletteStore.randomize()}
+    >
+      <Shuffle class="size-4" aria-hidden="true" />
+      Shuffle
+      <kbd class="ml-1 rounded-md border border-current/25 px-1.5 font-mono text-[10px] leading-4 opacity-70">
+        Space
+      </kbd>
+    </button>
+    <div class="segmented">
+      <button
+        type="button"
+        class="size-8 !px-0"
+        onclick={() => paletteStore.undo()}
+        disabled={!paletteStore.canUndo}
+        aria-label="Undo"
+        title="Undo (⌘Z)"
+      >
+        <Undo2 class="size-4" aria-hidden="true" />
+      </button>
+      <button
+        type="button"
+        class="size-8 !px-0"
+        onclick={() => paletteStore.redo()}
+        disabled={!paletteStore.canRedo}
+        aria-label="Redo"
+        title="Redo (⇧⌘Z)"
+      >
+        <Redo2 class="size-4" aria-hidden="true" />
+      </button>
     </div>
-
-    <Button variant="outline" class="w-full" onclick={() => paletteStore.randomize()}>
-      <RefreshCw data-icon="inline-start" />
-      Randomize palette
-    </Button>
-    <p class="text-muted-foreground text-xs">
-      Randomize picks a new seed color; locked swatches stay put. Unlocked siblings follow the
-      harmony unless you lock them.
-    </p>
-  </Card.Content>
-</Card.Root>
+  </div>
+</section>

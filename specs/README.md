@@ -8,6 +8,7 @@ A visual tool for generating harmonious color palettes using color theory algori
 - **HSL** (Hue, Saturation, Lightness) - Primary working space for harmony calculations
 - **RGB** (Red, Green, Blue) - Display and export format
 - **HEX** - Web-standard export format
+- **OKLCH** - Perceptual readout and export format; also drives the 50–950 shade scales
 
 ### Harmony Types
 - **Complementary** - Two colors opposite on the wheel (180°)
@@ -21,9 +22,29 @@ A visual tool for generating harmonious color palettes using color theory algori
 ### Palette Output
 - Color count and layout follow the selected harmony (not a fixed five-swatch grid)
 - Each color includes: HEX, RGB, HSL values
-- Contrast ratio indicators for accessibility
+- Each color also shows its OKLCH value and WCAG contrast against white and black
 - Copy-to-clipboard functionality
-- 60-30-10 also shows an abstract website preview
+- Live UI previews (website, editorial, dashboard, specimen) in light and dark modes
+
+## Studio (v4)
+
+- **Harmony wheel:** a 2D hue × saturation picker (lightness from the slider) with a draggable
+  marker per swatch; arrow keys adjust the selected swatch.
+- **History:** every edit is undoable (⌘Z / ⇧⌘Z). Rapid edits to the same control within 700 ms
+  collapse into one step; loading a preset is undoable.
+- **Shortcuts:** Space shuffles the seed (locked swatches stay), L toggles the selected lock, 1–5
+  select swatches. Space still presses a control that was focused from the keyboard.
+- **Presets:** curated HSL seed + harmony starting points, loaded through history.
+- **Fine-tuning:** each swatch card can lighten or darken by 4% and lock in place.
+- **Inspect:** 50–950 OKLCH shade scale per color, an N×N WCAG contrast matrix (AAA ≥ 7,
+  AA ≥ 4.5, AA large ≥ 3), and color-vision simulation (Machado 2009 protan/deutan/tritan
+  matrices plus achromatopsia) that flags pairs whose ΔE OK drops below 0.06.
+- **Previews:** palette colors map onto canvas, surface, ink, primary, secondary, and accent
+  roles. 60-30-10 keeps its dominant/secondary/accent roles; other harmonies tint neutrals from
+  the first color. Previews can be viewed through any CVD filter.
+- **Exports:** CSS variables (HEX with an OKLCH `@supports` upgrade), Tailwind v4 `@theme` with
+  50–950 OKLCH scales, W3C DTCG JSON tokens, SCSS variables + map, and a 1200×630 SVG card.
+- **Ambient theme:** the page accent and background wash follow the live palette.
 
 ## User Flow
 
@@ -57,7 +78,6 @@ to keep them fixed while editing one role.
 ## Out of Scope
 - Gradient generation
 - Image color extraction
-- Color blindness simulation
 - Custom harmony angle adjustments
 - Updating or deleting saved snapshots
 - Authentication and private palettes

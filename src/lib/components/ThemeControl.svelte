@@ -1,6 +1,5 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import { Button } from '$lib/components/ui/button';
   import Monitor from '@lucide/svelte/icons/monitor';
   import Moon from '@lucide/svelte/icons/moon';
   import Sun from '@lucide/svelte/icons/sun';
@@ -18,8 +17,8 @@
   let systemQuery: MediaQueryList | undefined;
 
   function applyTheme(selectedTheme: Theme) {
-    const useDark = selectedTheme === 'dark' ||
-      (selectedTheme === 'system' && systemQuery?.matches === true);
+    const useDark =
+      selectedTheme === 'dark' || (selectedTheme === 'system' && systemQuery?.matches === true);
     document.documentElement.classList.toggle('dark', useDark);
     document.documentElement.style.colorScheme = useDark ? 'dark' : 'light';
   }
@@ -54,20 +53,17 @@
   });
 </script>
 
-<div class="bg-muted flex items-center rounded-lg border p-1" role="group" aria-label="Color theme">
+<div class="segmented [&>button]:size-8 [&>button]:px-0" role="group" aria-label="Color theme">
   {#each options as option}
     {@const Icon = option.icon}
-    <Button
-      variant={theme === option.value ? 'secondary' : 'ghost'}
-      size="icon-sm"
-      class={`shadow-none ${theme === option.value ? 'bg-background shadow-xs' : ''}`}
+    <button
+      type="button"
       aria-label="Use {option.label.toLowerCase()} theme"
       aria-pressed={theme === option.value}
       title="{option.label} theme"
       onclick={() => selectTheme(option.value)}
     >
-      <Icon aria-hidden="true" />
-      <span class="sr-only">{option.label}</span>
-    </Button>
+      <Icon class="size-4" aria-hidden="true" />
+    </button>
   {/each}
 </div>

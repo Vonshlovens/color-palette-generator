@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { createPaletteStore } from './palette.svelte';
 
 describe('createPaletteStore', () => {
@@ -143,5 +143,75 @@ describe('createPaletteStore', () => {
 
     store.setHarmony('complementary');
     expect(store.selectedIndex).toBe(0);
+  });
+
+  describe('history', () => {
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+
+    it('undoes and redoes harmony, lock, and shuffle edits in order', () => {
+      const store = createPaletteStore();
+      store.setHarmony('triadic');
+      store.toggleLock(2);
+      store.randomize();
+
+      store.undo();
+      expect(store.snapshot()).toMatchObject({ hue: 220, harmony: 'triadic' });
+      expect(store.isLocked(2)).toBe(true);
+      store.undo();
+      expect(store.isLocked(2)).toBe(false);
+      store.undo();
+      expect(store.harmony).toBe('complementary');
+      expect(store.canUndo).toBe(false);
+
+      store.redo();
+      store.redo();
+      expect(store.harmony).toBe('triadic');
+      expect(store.isLocked(2)).toBe(true);
+    });
+
+    it('collapses a quick slider drag into one undo step', () => {
+      vi.useFakeTimers();
+      const store = createPaletteStore();
+      for (const hue of [221, 225, 232, 240]) {
+        store.setSelectedHue(hue);
+        vi.advanceTimersByTime(50);
+      }
+      vi.advanceTimersByTime(1000);
+      store.setSelectedHue(300);
+
+      store.undo();
+      expect(store.hue).toBe(240);
+      store.undo();
+      expect(store.hue).toBe(220);
+      expect(store.canUndo).toBe(false);
+    });
+
+    it('drops the redo stack after a new edit', () => {
+      const store = createPaletteStore();
+      store.setHarmony('analogous');
+      store.undo();
+      expect(store.canRedo).toBe(true);
+      store.setHarmony('tetradic');
+      expect(store.canRedo).toBe(false);
+    });
+
+    it('does not record edits that change nothing', () => {
+      const store = createPaletteStore();
+      store.setHarmony('complementary');
+      store.setSelectedHue(store.selectedColor.hsl.h);
+      expect(store.canUndo).toBe(false);
+    });
+
+    it('loads a preset as an undoable step', () => {
+      const store = createPaletteStore();
+      store.toggleLock(1);
+      expect(store.load({ hue: 40, saturation: 90, lightness: 52, harmony: 'split-complementary' })).toBe(true);
+      expect(store.lockedCount).toBe(0);
+      store.undo();
+      expect(store.snapshot()).toMatchObject({ hue: 220, harmony: 'complementary' });
+      expect(store.isLocked(1)).toBe(true);
+    });
   });
 });
