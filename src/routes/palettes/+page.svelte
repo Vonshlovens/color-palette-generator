@@ -1,10 +1,9 @@
 <script lang="ts">
-  import { PaletteCard, ThemeControl } from '$lib/components';
-  import { Badge } from '$lib/components/ui/badge';
-  import { Button } from '$lib/components/ui/button';
-  import type { SavedPalette } from '$lib/types';
+  import { PaletteCard } from '$lib/components';
+  import HarmonyGlyph from '$lib/components/HarmonyGlyph.svelte';
+  import { getHarmonyName } from '$lib/color/harmonies';
+  import { HARMONY_TYPES, type HarmonyType, type SavedPalette } from '$lib/types';
   import LoaderCircle from '@lucide/svelte/icons/loader-circle';
-  import Palette from '@lucide/svelte/icons/palette';
   import Plus from '@lucide/svelte/icons/plus';
   import type { PageProps } from './$types';
 
@@ -15,9 +14,16 @@
   let clientHasMore = $state<boolean | null>(null);
   let loadingMore = $state(false);
   let loadError = $state('');
+  let filter = $state<HarmonyType | 'all'>('all');
 
   const allPalettes = $derived([...data.palettes, ...extraPalettes]);
   const hasMore = $derived(clientHasMore ?? data.hasMore);
+  const visible = $derived(
+    filter === 'all' ? allPalettes : allPalettes.filter((palette) => palette.harmony === filter)
+  );
+  const presentHarmonies = $derived(
+    HARMONY_TYPES.filter((harmony) => allPalettes.some((palette) => palette.harmony === harmony))
+  );
 
   async function loadMore() {
     loadingMore = true;
@@ -47,96 +53,113 @@
 </script>
 
 <svelte:head>
-  <title>Palette gallery · Palette Studio</title>
-  <meta name="description" content="Browse saved color palettes and open them in the editor." />
+  <title>Gallery · Palette Studio</title>
+  <meta name="description" content="Browse saved color palettes and open them in the studio." />
 </svelte:head>
 
-<div class="min-h-screen">
-  <header class="border-b bg-background/90 sticky top-0 z-40 backdrop-blur">
-    <div class="mx-auto flex h-16 max-w-7xl items-center justify-between gap-4 px-4 sm:px-6">
-      <a class="flex min-w-0 items-center gap-3" href="/" aria-label="Palette Studio home">
-        <span
-          class="bg-primary text-primary-foreground flex size-9 shrink-0 items-center justify-center rounded-xl"
-        >
-          <Palette class="size-5" aria-hidden="true" />
-        </span>
-        <div class="min-w-0">
-          <p class="truncate text-sm font-semibold sm:text-base">Palette Studio</p>
-          <p class="text-muted-foreground hidden text-xs sm:block">Color harmony workspace</p>
-        </div>
-      </a>
-      <div class="flex items-center gap-2">
-        <Button variant="ghost" size="sm" href="/">
-          <Plus data-icon="inline-start" />
-          New palette
-        </Button>
-        <ThemeControl />
-      </div>
-    </div>
-  </header>
-
-  <main class="mx-auto max-w-7xl space-y-8 px-4 py-8 sm:px-6 sm:py-12">
+<main class="mx-auto max-w-[90rem] space-y-8 px-4 pt-8 pb-16 sm:px-6 sm:pt-12">
+  <div class="flex flex-col gap-5 md:flex-row md:items-end md:justify-between">
     <div class="max-w-2xl">
-      <Badge variant="outline" class="mb-3">Gallery</Badge>
-      <h1 class="text-2xl font-semibold tracking-tight sm:text-3xl">Saved palettes</h1>
-      <p class="text-muted-foreground mt-2 text-sm leading-relaxed sm:text-base">
-        Snapshots stored in the database (Turso or local SQLite). Open one to tweak its harmony and
-        colors, then save your version as a new share link.
+      <h1 class="font-display text-4xl leading-[0.98] font-semibold sm:text-6xl">Gallery</h1>
+      <p class="text-muted-foreground mt-3 text-[0.9375rem] leading-relaxed">
+        Palettes people have saved and shared. Open one to remix it in the studio; saving your
+        version creates a new link.
       </p>
     </div>
+    <a
+      href="/"
+      class="bg-primary text-primary-foreground hover:bg-primary/85 inline-flex h-10 items-center gap-2 self-start rounded-xl px-4 text-sm font-medium shadow-[inset_0_1px_0_oklch(1_0_0/0.15),0_1px_2px_oklch(0_0_0/0.2)] transition-colors md:self-auto"
+    >
+      <Plus class="size-4" aria-hidden="true" />
+      New palette
+    </a>
+  </div>
 
-    <section aria-labelledby="gallery-heading" class="space-y-4">
-      <h2 id="gallery-heading" class="sr-only">All saved palettes</h2>
-
-      {#if allPalettes.length === 0}
-        <div class="rounded-xl border border-dashed p-6 text-center">
-          <p class="text-sm font-medium">No palettes saved yet</p>
-          <p class="text-muted-foreground mt-1 text-sm">
-            Be the first — build a palette in the generator and save it.
-          </p>
-          <Button class="mt-4" size="sm" href="/">
-            <Plus data-icon="inline-start" />
-            Create a palette
-          </Button>
-        </div>
-      {:else}
-        <ul class="grid list-none grid-cols-1 gap-4 p-0 sm:grid-cols-2 lg:grid-cols-3">
-          {#each allPalettes as palette (palette.slug)}
-            <li>
-              <PaletteCard
-                slug={palette.slug}
-                name={palette.name}
-                hue={palette.hue}
-                saturation={palette.saturation}
-                lightness={palette.lightness}
-                harmony={palette.harmony}
-                dateLabel="Created {palette.createdAt.slice(0, 10)}"
-              />
-            </li>
+  {#if allPalettes.length === 0}
+    <div class="panel flex flex-col items-center px-6 py-16 text-center">
+      <div class="flex gap-2" aria-hidden="true">
+        {#each ['#e8a33d', '#2f6f73', '#c2456b', '#3d4f9c'] as hex, index}
+          <span
+            class="h-20 w-12 rounded-xl shadow-md"
+            style="background: {hex}; transform: rotate({(index - 1.5) * 7}deg) translateY({Math.abs(index - 1.5) * 6}px)"
+          ></span>
+        {/each}
+      </div>
+      <p class="font-display mt-8 text-2xl font-semibold">Nothing saved yet</p>
+      <p class="text-muted-foreground mt-2 max-w-sm text-sm">
+        Build a palette in the studio and choose Save to give it a share link. It will show up
+        here.
+      </p>
+      <a
+        href="/"
+        class="bg-primary text-primary-foreground hover:bg-primary/85 mt-6 inline-flex h-10 items-center gap-2 rounded-xl px-4 text-sm font-medium transition-colors"
+      >
+        <Plus class="size-4" aria-hidden="true" />
+        Create a palette
+      </a>
+    </div>
+  {:else}
+    {#if presentHarmonies.length > 1}
+      <div class="-mx-1 overflow-x-auto px-1 pb-1">
+        <div class="segmented" role="group" aria-label="Filter by harmony">
+          <button type="button" aria-pressed={filter === 'all'} onclick={() => (filter = 'all')}>
+            All
+            <span class="tabular text-muted-foreground text-xs">{allPalettes.length}</span>
+          </button>
+          {#each presentHarmonies as harmony (harmony)}
+            <button type="button" aria-pressed={filter === harmony} onclick={() => (filter = harmony)}>
+              <HarmonyGlyph {harmony} class="size-4" />
+              {getHarmonyName(harmony)}
+            </button>
           {/each}
-        </ul>
+        </div>
+      </div>
+    {/if}
 
-        {#if hasMore}
-          <div class="flex justify-center">
-            <Button variant="outline" onclick={loadMore} disabled={loadingMore}>
-              {#if loadingMore}
-                <LoaderCircle class="animate-spin" data-icon="inline-start" />
-                Loading…
-              {:else}
-                Load more
-              {/if}
-            </Button>
-          </div>
-        {/if}
-
-        {#if loadError}
-          <p class="text-destructive text-center text-sm" role="alert">{loadError}</p>
-        {/if}
+    <section aria-labelledby="gallery-heading">
+      <h2 id="gallery-heading" class="sr-only">Saved palettes</h2>
+      <ul class="grid list-none grid-cols-1 gap-5 p-0 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4">
+        {#each visible as palette (palette.slug)}
+          <li>
+            <PaletteCard
+              slug={palette.slug}
+              name={palette.name}
+              hue={palette.hue}
+              saturation={palette.saturation}
+              lightness={palette.lightness}
+              harmony={palette.harmony}
+              dateLabel={palette.createdAt.slice(0, 10)}
+            />
+          </li>
+        {/each}
+      </ul>
+      {#if visible.length === 0}
+        <p class="text-muted-foreground py-10 text-center text-sm">
+          No {getHarmonyName(filter as HarmonyType).toLowerCase()} palettes loaded yet.
+        </p>
       {/if}
     </section>
-  </main>
 
-  <footer class="text-muted-foreground border-t px-4 py-6 text-center text-xs">
-    Open any palette to edit it in your browser — saving always creates a new snapshot.
-  </footer>
-</div>
+    {#if hasMore}
+      <div class="flex justify-center">
+        <button
+          type="button"
+          class="bg-card hover:bg-muted inline-flex h-10 items-center gap-2 rounded-xl border px-5 text-sm font-medium shadow-[inset_0_1px_0_var(--panel-edge)] transition-colors disabled:opacity-60"
+          onclick={loadMore}
+          disabled={loadingMore}
+        >
+          {#if loadingMore}
+            <LoaderCircle class="size-4 animate-spin" aria-hidden="true" />
+            Loading…
+          {:else}
+            Load more
+          {/if}
+        </button>
+      </div>
+    {/if}
+
+    {#if loadError}
+      <p class="text-destructive text-center text-sm" role="alert">{loadError}</p>
+    {/if}
+  {/if}
+</main>

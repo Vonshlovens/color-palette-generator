@@ -23,7 +23,7 @@
   <title>{page.status} · {title} · Palette Studio</title>
 </svelte:head>
 
-<main class="flex min-h-screen items-center justify-center px-4 py-12">
+<main class="flex min-h-[calc(100vh-3.5rem)] items-center justify-center px-4 py-12">
   <Card class="w-full max-w-lg">
     <CardHeader>
       <div class="bg-destructive/10 text-destructive mb-2 flex size-11 items-center justify-center rounded-xl">

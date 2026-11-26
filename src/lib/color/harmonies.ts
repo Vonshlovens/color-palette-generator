@@ -189,13 +189,41 @@ export function inferBaseFromSwatch(harmony: HarmonyType, index: number, target:
   }
 }
 
-/** Human-readable label for a palette slot (roles for 60-30-10, otherwise Color N). */
+const SWATCH_LABELS: Record<HarmonyType, readonly string[]> = {
+  complementary: ['Base', 'Complement'],
+  analogous: ['Neighbor −30°', 'Base', 'Neighbor +30°'],
+  triadic: ['Base', 'Triad +120°', 'Triad +240°'],
+  'split-complementary': ['Base', 'Split +150°', 'Split +210°'],
+  tetradic: ['Base', 'Rectangle +60°', 'Complement', 'Rectangle +240°'],
+  monochromatic: ['Deep', 'Shade', 'Base', 'Tint', 'Pale'],
+  '60-30-10': SIXTY_THIRTY_TEN_ROLES
+};
+
+/** Human-readable label for a palette slot, describing its role in the harmony. */
 export function getSwatchLabel(harmony: HarmonyType, index: number): string {
-  if (harmony === '60-30-10') {
-    return SIXTY_THIRTY_TEN_ROLES[index] ?? `Color ${index + 1}`;
-  }
-  return `Color ${index + 1}`;
+  return SWATCH_LABELS[harmony][index] ?? `Color ${index + 1}`;
 }
+
+const TOKEN_NAMES = ['primary', 'secondary', 'tertiary', 'quaternary', 'quinary'] as const;
+
+/** Stable design-token name for a palette slot, used by every export format. */
+export function getSwatchTokenName(harmony: HarmonyType, index: number): string {
+  if (harmony === '60-30-10') {
+    return (['dominant', 'secondary', 'accent'] as const)[index] ?? `color-${index + 1}`;
+  }
+  return TOKEN_NAMES[index] ?? `color-${index + 1}`;
+}
+
+/** Hue offsets (degrees from the base) that define each harmony, for wheel diagrams. */
+export const HARMONY_ANGLES: Record<HarmonyType, readonly number[]> = {
+  complementary: [0, 180],
+  analogous: [-30, 0, 30],
+  triadic: [0, 120, 240],
+  'split-complementary': [0, 150, 210],
+  tetradic: [0, 60, 180, 240],
+  monochromatic: [0],
+  '60-30-10': [0, 180]
+};
 
 /**
  * Get display name for harmony type

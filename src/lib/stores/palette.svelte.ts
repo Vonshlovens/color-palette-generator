@@ -18,6 +18,15 @@ const DEFAULT_STATE: PaletteState = {
 };
 
 const PALETTE_STORE_CONTEXT = Symbol('palette-store');
+/** Edits with the same key inside this window collapse into one undo step (e.g. a slider drag). */
+const COALESCE_MS = 700;
+const HISTORY_LIMIT = 100;
+
+interface HistoryEntry {
+  state: PaletteState;
+  locks: Record<number, Color>;
+  selectedIndex: number;
+}
 
 function cloneColor(color: Color): Color {
   return createColor({ ...color.hsl });
@@ -33,6 +42,10 @@ export class PaletteStore {
   #locks = $state<Record<number, Color>>({});
   /** Which palette swatch the color picker is editing. */
   #selectedIndex = $state(0);
+  #past = $state<HistoryEntry[]>([]);
+  #future = $state<HistoryEntry[]>([]);
+  #lastKey: string | null = null;
+  #lastTime = 0;
 
   constructor(snapshot?: PaletteSnapshot) {
     if (snapshot) this.hydrate(snapshot);
@@ -90,6 +103,62 @@ export class PaletteStore {
     return colors[this.#selectedIndex] ?? colors[0] ?? this.baseColor;
   }
 
+  get canUndo(): boolean {
+    return this.#past.length > 0;
+  }
+
+  get canRedo(): boolean {
+    return this.#future.length > 0;
+  }
+
+  #capture(): HistoryEntry {
+    return {
+      state: { ...this.#state },
+      locks: { ...this.#locks },
+      selectedIndex: this.#selectedIndex
+    };
+  }
+
+  #restore(entry: HistoryEntry): void {
+    this.#state = { ...entry.state };
+    this.#locks = { ...entry.locks };
+    this.#selectedIndex = entry.selectedIndex;
+  }
+
+  /**
+   * Push the current state onto the undo stack before a change. Repeated edits with the same
+   * key in quick succession share one entry, so a slider drag undoes in a single step.
+   */
+  #record(key?: string): void {
+    const now = Date.now();
+    if (key && key === this.#lastKey && now - this.#lastTime < COALESCE_MS) {
+      this.#lastTime = now;
+      return;
+    }
+    this.#past = [...this.#past.slice(-(HISTORY_LIMIT - 1)), this.#capture()];
+    this.#future = [];
+    this.#lastKey = key ?? null;
+    this.#lastTime = now;
+  }
+
+  undo(): void {
+    const previous = this.#past.at(-1);
+    if (!previous) return;
+    this.#future = [...this.#future, this.#capture()];
+    this.#past = this.#past.slice(0, -1);
+    this.#restore(previous);
+    this.#lastKey = null;
+  }
+
+  redo(): void {
+    const next = this.#future.at(-1);
+    if (!next) return;
+    this.#past = [...this.#past, this.#capture()];
+    this.#future = this.#future.slice(0, -1);
+    this.#restore(next);
+    this.#lastKey = null;
+  }
+
   isLocked(index: number): boolean {
     return this.#locks[index] !== undefined;
   }
@@ -113,6 +182,12 @@ export class PaletteStore {
       s: Math.max(0, Math.min(100, hsl.s)),
       l: Math.max(0, Math.min(100, hsl.l))
     });
+
+    const current = this.colors[index]?.hsl;
+    if (current && current.h === next.hsl.h && current.s === next.hsl.s && current.l === next.hsl.l) {
+      return;
+    }
+    this.#record(`edit:${index}`);
 
     if (this.isLocked(index)) {
       this.#locks = { ...this.#locks, [index]: next };
@@ -157,6 +232,8 @@ export class PaletteStore {
 
   toggleLock(index: number): void {
     if (!Number.isInteger(index) || index < 0) return;
+    if (index >= this.colors.length) return;
+    this.#record();
 
     if (this.isLocked(index)) {
       const { [index]: _removed, ...rest } = this.#locks;
@@ -164,34 +241,40 @@ export class PaletteStore {
       return;
     }
 
-    const generated = generatePalette(this.baseHsl, this.#state.harmony);
-    if (index >= generated.length) return;
-
     // Lock the currently displayed color (respecting any existing locks).
     const current = this.colors[index];
     this.#locks = { ...this.#locks, [index]: cloneColor(current) };
   }
 
   clearLocks(): void {
+    if (this.lockedCount > 0) this.#record();
     this.#locks = {};
   }
 
   setHue(value: number): void {
-    if (Number.isFinite(value)) this.#state.hue = Math.max(0, Math.min(360, value));
+    if (!Number.isFinite(value)) return;
+    this.#record('base');
+    this.#state.hue = Math.max(0, Math.min(360, value));
   }
 
   setSaturation(value: number): void {
-    if (Number.isFinite(value)) this.#state.saturation = Math.max(0, Math.min(100, value));
+    if (!Number.isFinite(value)) return;
+    this.#record('base');
+    this.#state.saturation = Math.max(0, Math.min(100, value));
   }
 
   setLightness(value: number): void {
-    if (Number.isFinite(value)) this.#state.lightness = Math.max(0, Math.min(100, value));
+    if (!Number.isFinite(value)) return;
+    this.#record('base');
+    this.#state.lightness = Math.max(0, Math.min(100, value));
   }
 
   setHarmony(value: HarmonyType): void {
+    if (value === this.#state.harmony) return;
+    this.#record();
     this.#state.harmony = value;
     // Drop locks when the relationship changes so a previous mode can't freeze the new palette.
-    this.clearLocks();
+    this.#locks = {};
     this.#selectedIndex = 0;
   }
 
@@ -226,14 +309,30 @@ export class PaletteStore {
       return false;
     }
 
-    this.#state = { ...snapshot };
-    this.clearLocks();
+    this.#state = {
+      hue: snapshot.hue,
+      saturation: snapshot.saturation,
+      lightness: snapshot.lightness,
+      harmony: snapshot.harmony
+    };
+    this.#locks = {};
     this.#selectedIndex = 0;
+    return true;
+  }
+
+  /** Load a preset or other snapshot as an undoable edit. */
+  load(snapshot: PaletteSnapshot): boolean {
+    const before = this.#capture();
+    if (!this.hydrate(snapshot)) return false;
+    this.#past = [...this.#past.slice(-(HISTORY_LIMIT - 1)), before];
+    this.#future = [];
+    this.#lastKey = null;
     return true;
   }
 
   /** Randomize the base HSL only; locked palette slots stay put. */
   randomize(): void {
+    this.#record();
     this.#state.hue = Math.floor(Math.random() * 360);
     this.#state.saturation = 50 + Math.floor(Math.random() * 40);
     this.#state.lightness = 40 + Math.floor(Math.random() * 30);

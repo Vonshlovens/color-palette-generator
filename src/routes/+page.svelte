@@ -1,60 +1,41 @@
 <script lang="ts">
-  import { PaletteWorkspace, ThemeControl } from '$lib/components';
-  import { Badge } from '$lib/components/ui/badge';
-  import { Button } from '$lib/components/ui/button';
-  import LayoutGrid from '@lucide/svelte/icons/layout-grid';
-  import Palette from '@lucide/svelte/icons/palette';
+  import { PaletteWorkspace } from '$lib/components';
+
+  const shortcuts = [
+    { keys: ['Space'], action: 'shuffle' },
+    { keys: ['L'], action: 'lock' },
+    { keys: ['1', '5'], action: 'pick a swatch' },
+    { keys: ['⌘', 'Z'], action: 'undo' }
+  ];
 </script>
 
 <svelte:head>
-  <title>Color Palette Generator</title>
+  <title>Palette Studio</title>
   <meta
     name="description"
-    content="Create accessible, harmonious color palettes using color theory."
+    content="Build accessible color palettes with harmony rules, OKLCH scales, contrast checks, and live UI previews."
   />
 </svelte:head>
 
-<div class="min-h-screen">
-  <header class="border-b bg-background/90 sticky top-0 z-40 backdrop-blur">
-    <div class="mx-auto flex h-16 max-w-7xl items-center justify-between gap-4 px-4 sm:px-6">
-      <div class="flex min-w-0 items-center gap-3">
-        <span
-          class="bg-primary text-primary-foreground flex size-9 shrink-0 items-center justify-center rounded-xl"
-        >
-          <Palette class="size-5" aria-hidden="true" />
-        </span>
-        <div class="min-w-0">
-          <p class="truncate text-sm font-semibold sm:text-base">Palette Studio</p>
-          <p class="text-muted-foreground hidden text-xs sm:block">Color harmony workspace</p>
-        </div>
-      </div>
-      <div class="flex items-center gap-2">
-        <Button variant="ghost" size="sm" href="/palettes">
-          <LayoutGrid data-icon="inline-start" />
-          Gallery
-        </Button>
-        <ThemeControl />
-      </div>
-    </div>
-  </header>
+<main class="mx-auto max-w-[90rem] px-4 pt-8 pb-16 sm:px-6 sm:pt-12">
+  <div class="mb-9 flex flex-col gap-5 md:flex-row md:items-end md:justify-between">
+    <h1 class="font-display max-w-2xl text-4xl leading-[0.98] font-semibold text-balance sm:text-6xl">
+      Find colors that belong together.
+    </h1>
+    <ul class="text-muted-foreground hidden flex-wrap gap-x-4 gap-y-2 text-xs md:flex md:justify-end" aria-label="Keyboard shortcuts">
+      {#each shortcuts as shortcut (shortcut.action)}
+        <li class="flex items-center gap-1.5">
+          <span class="flex items-center gap-0.5">
+            {#each shortcut.keys as key, index (key)}
+              {#if index > 0 && shortcut.keys.length === 2 && key === '5'}<span>–</span>{/if}
+              <kbd class="kbd">{key}</kbd>
+            {/each}
+          </span>
+          {shortcut.action}
+        </li>
+      {/each}
+    </ul>
+  </div>
 
-  <main class="mx-auto max-w-7xl px-4 py-8 sm:px-6 sm:py-12">
-    <div class="mb-8 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-      <div class="max-w-2xl">
-        <Badge variant="outline" class="mb-3">HSL-powered</Badge>
-        <h1 class="text-2xl font-semibold tracking-tight sm:text-3xl">Build a balanced color system</h1>
-        <p class="text-muted-foreground mt-2 text-sm leading-relaxed sm:text-base">
-          Choose a base color, explore proven harmony rules, and export a palette sized to the
-          relationship you pick — including a 60-30-10 website preview.
-        </p>
-      </div>
-      <p class="text-muted-foreground text-xs">All color calculations stay in your browser.</p>
-    </div>
-
-    <PaletteWorkspace />
-  </main>
-
-  <footer class="text-muted-foreground border-t px-4 py-6 text-center text-xs">
-    Select a swatch to edit it, or use the copy control for its HEX value.
-  </footer>
-</div>
+  <PaletteWorkspace />
+</main>

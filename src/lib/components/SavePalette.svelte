@@ -69,15 +69,24 @@
 <Dialog.Root bind:open>
   <Dialog.Trigger>
     {#snippet child({ props })}
-      <Button {...props} variant="outline" size="sm">
-        <Save data-icon="inline-start" />
+      <button
+        {...props}
+        type="button"
+        class="bg-card hover:bg-muted inline-flex h-9 items-center gap-1.5 rounded-xl border px-3 text-sm font-medium shadow-[inset_0_1px_0_var(--panel-edge),0_1px_2px_oklch(0_0_0/0.08)] transition-colors outline-none focus-visible:ring-2 focus-visible:ring-ring"
+      >
+        <Save class="size-4" aria-hidden="true" />
         Save
-      </Button>
+      </button>
     {/snippet}
   </Dialog.Trigger>
-  <Dialog.Content>
+  <Dialog.Content class="rounded-3xl">
+    <div class="-mx-6 -mt-6 flex h-20 overflow-hidden rounded-t-3xl" aria-hidden="true">
+      {#each paletteStore.colors as color, index (index)}
+        <span class="flex-1" style="background: {color.hex}"></span>
+      {/each}
+    </div>
     <Dialog.Header>
-      <Dialog.Title>Save palette</Dialog.Title>
+      <Dialog.Title class="font-display text-xl">Save palette</Dialog.Title>
       <Dialog.Description>
         Create an immutable snapshot and a public link you can share.
       </Dialog.Description>
