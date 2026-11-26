@@ -39,8 +39,13 @@ describe('palette queries', () => {
     const { database, cleanup } = await createTestDatabase();
 
     try {
+      const [creator] = await database
+        .insert(schema.user)
+        .values({ id: randomUUID(), name: 'Creator', email: 'creator@example.com' })
+        .returning();
       const created = await createPalette(
         {
+          createdBy: creator.id,
           name: 'Integration Palette',
           hue: 275.5,
           saturation: 64,
@@ -55,6 +60,7 @@ describe('palette queries', () => {
 
       const retrieved = await getPaletteBySlug(created.slug, database);
       expect(retrieved).toEqual(created);
+      expect(retrieved?.createdBy).toBe(creator.id);
       expect(await getPaletteBySlug('DoesNotExist', database)).toBeUndefined();
     } finally {
       await cleanup();

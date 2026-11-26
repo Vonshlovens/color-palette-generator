@@ -13,6 +13,8 @@ A visual tool for generating harmonious color palettes using color theory algori
 - **Export Options**: CSS variables, Tailwind config, or JSON
 - **Saved Palettes (v2)**: Create immutable snapshots with public share links
 - **Gallery (v3)**: Browse database-backed saved palettes at `/palettes`
+- **Owner-approved accounts**: Magic-link sign-in; saving palettes requires an account the owner
+  approved at `/approvals`. Generating palettes stays in the browser and needs no account.
 
 ## Tech Stack
 
@@ -20,6 +22,7 @@ A visual tool for generating harmonious color palettes using color theory algori
 - SvelteKit for routing
 - Tailwind CSS v4 for styling
 - Turso/libSQL with Drizzle ORM for persistence
+- Better Auth (magic link plugin) for sign-in
 - TypeScript for type safety
 
 ## Development
@@ -60,6 +63,38 @@ bun run preview
 `TURSO_DATABASE_URL` defaults to `file:local.db`. An empty `TURSO_AUTH_TOKEN` is treated as absent.
 Set both values for a remote libSQL database. `bun run db:migrate` applies the committed,
 Drizzle-tracked migrations and can be run from any working directory.
+
+## Accounts and approvals
+
+Sign-in is magic link only (no passwords), and every account except the owner needs approval:
+
+1. A visitor submits **Request access** at `/sign-in`. This stores a `pending` user and sends no
+   email. New requests are refused while `AUTH_MAX_PENDING_REQUESTS` (default 25) are pending.
+2. The owner (`OWNER_EMAIL`, default `eric@ericevans.dev`) signs in at `/sign-in`. The owner account
+   is created and approved on first sign-in; no database edits are needed.
+3. At `/approvals` the owner approves, rejects, or revokes people. Approving emails them; rejecting
+   or revoking deletes their sessions.
+4. Approved people request a one-time link (valid 15 minutes) at `/sign-in` and can then save.
+
+A sign-in request for an email without approved access gets the same response but sends no email
+and writes nothing, and each address can receive at most one link per minute. Sessions are only
+created for approved users, so a link issued before a revoke cannot be redeemed.
+
+| Variable | Purpose |
+| --- | --- |
+| `BETTER_AUTH_SECRET` | Required in production; 32+ random characters (`openssl rand -base64 32`). |
+| `BETTER_AUTH_URL` | Public URL used in sign-in links; defaults to `ORIGIN`. Required in production. |
+| `OWNER_EMAIL` | Owner/admin email; defaults to `eric@ericevans.dev`. |
+| `RESEND_API_KEY`, `AUTH_EMAIL_FROM` | Email delivery via the Resend HTTP API. `AUTH_EMAIL_FROM` must use a domain verified in Resend. |
+| `AUTH_MAX_PENDING_REQUESTS` | Cap on pending access requests (default 25). |
+
+Without `RESEND_API_KEY`, `bun run dev` prints sign-in links to the server console instead of
+sending them. Production refuses to send without it.
+
+The server builds Better Auth per request with `createAuth(db, config)` in
+`src/lib/server/auth/index.ts`; it uses only `fetch` and Web Crypto, so on Cloudflare Workers
+`hooks.server.ts` can pass a D1-backed `drizzle(platform.env.DB, { schema })` instead of the libSQL
+database.
 
 ## Docker self-hosting
 
@@ -102,6 +137,9 @@ permissions. `.env` files are ignored by Git and the Docker build context:
 TURSO_DATABASE_URL=libsql://your-database.turso.io
 TURSO_AUTH_TOKEN=your-token
 ORIGIN=https://palettes.example.com
+BETTER_AUTH_SECRET=generate-with-openssl-rand-base64-32
+RESEND_API_KEY=re_your_key
+AUTH_EMAIL_FROM="Palette Studio <login@palettes.example.com>"
 ```
 
 ```bash
@@ -120,9 +158,9 @@ If dynamic forwarded host/protocol handling is required, set `ORIGIN=` plus
 `PROTOCOL_HEADER=x-forwarded-proto` and `HOST_HEADER=x-forwarded-host`. Set
 `ADDRESS_HEADER=x-forwarded-for` only when client IPs are needed, with `XFF_DEPTH` equal to the exact
 number of trusted proxies. Never trust these headers while the app port is directly client-accessible.
-Because `POST /api/palettes` is public and creates persistent records, configure request rate limits
-and reasonable body-size limits for that route at the trusted reverse proxy to prevent storage and
-request-flood abuse.
+`POST /api/palettes` requires an approved session, and Better Auth rate-limits its own endpoints in
+memory, but reasonable body-size and request rate limits at the trusted reverse proxy are still
+recommended.
 
 Docker and Compose health checks call `/health` with Bun itself; the endpoint verifies both the app
 and database and returns HTTP 503 when the database is unavailable. Inspect status with
@@ -131,7 +169,7 @@ and database and returns HTTP 503 when the database is unavailable. Inspect stat
 Saved snapshots persist only their name, HSL generator inputs, harmony type, public slug, and
 timestamps. Generated HEX/RGB colors are always derived at runtime. The public API is:
 
-- `POST /api/palettes` — create a new immutable snapshot
+- `POST /api/palettes` — create a new immutable snapshot (approved, signed-in users only; 401 otherwise)
 - `GET /api/palettes` — list public snapshots, newest first (`limit` ≤ 50, `offset` pagination)
 - `GET /api/palettes/:slug` — retrieve a public snapshot
 - `GET /health` — report application and database availability
@@ -143,7 +181,7 @@ src/
 ├── lib/
 │   ├── components/     # UI components
 │   ├── color/          # Color conversion & harmony algorithms
-│   ├── server/         # Server-only database and palette persistence
+│   ├── server/         # Server-only database, auth, and palette persistence
 │   ├── stores/         # Reactive state management
 │   └── types.ts        # TypeScript definitions
 ├── routes/             # SvelteKit pages

@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { PaletteWorkspace, ThemeControl } from '$lib/components';
+  import { AuthControl, PaletteWorkspace, ThemeControl } from '$lib/components';
   import { Badge } from '$lib/components/ui/badge';
   import { Button } from '$lib/components/ui/button';
   import LayoutGrid from '@lucide/svelte/icons/layout-grid';
@@ -33,6 +33,7 @@
           <LayoutGrid data-icon="inline-start" />
           Gallery
         </Button>
+        <AuthControl />
         <ThemeControl />
       </div>
     </div>

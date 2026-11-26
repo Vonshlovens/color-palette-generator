@@ -1,19 +1,18 @@
 import { randomBytes, randomUUID } from 'node:crypto';
 import { desc, eq } from 'drizzle-orm';
-import type { LibSQLDatabase } from 'drizzle-orm/libsql';
-import { db, schema } from '$lib/server/db';
+import { db, type AppDatabase } from '$lib/server/db';
 import { palettes, type PaletteRecord } from '$lib/server/db/schema';
 import type { CreatePaletteInput } from './validation';
 
 const MAX_SLUG_ATTEMPTS = 3;
-type PaletteDatabase = LibSQLDatabase<typeof schema>;
+type PaletteDatabase = AppDatabase;
 
 function createSlug(): string {
   return randomBytes(9).toString('base64url');
 }
 
 export async function createPalette(
-  input: CreatePaletteInput,
+  input: CreatePaletteInput & { createdBy: string },
   database: PaletteDatabase = db
 ): Promise<PaletteRecord> {
   const now = new Date();
@@ -29,6 +28,7 @@ export async function createPalette(
         saturation: input.saturation,
         lightness: input.lightness,
         harmony: input.harmony,
+        createdBy: input.createdBy,
         createdAt: now,
         updatedAt: now
       })

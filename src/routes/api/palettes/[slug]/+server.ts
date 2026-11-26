@@ -4,7 +4,7 @@ import { toSavedPalette } from '$lib/server/palettes/mapping';
 import { paletteSlugSchema } from '$lib/server/palettes/validation';
 import type { RequestHandler } from './$types';
 
-export const GET: RequestHandler = async ({ params }) => {
+export const GET: RequestHandler = async ({ params, locals }) => {
   if (!paletteSlugSchema.safeParse(params.slug).success) {
     return json(
       { error: { code: 'NOT_FOUND', message: 'Palette not found' } },
@@ -13,7 +13,7 @@ export const GET: RequestHandler = async ({ params }) => {
   }
 
   try {
-    const record = await getPaletteBySlug(params.slug);
+    const record = await getPaletteBySlug(params.slug, locals.db);
 
     if (!record) {
       return json(

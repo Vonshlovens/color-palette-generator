@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { PaletteCard, ThemeControl } from '$lib/components';
+  import { AuthControl, PaletteCard, ThemeControl } from '$lib/components';
   import { Badge } from '$lib/components/ui/badge';
   import { Button } from '$lib/components/ui/button';
   import type { SavedPalette } from '$lib/types';
@@ -70,6 +70,7 @@
           <Plus data-icon="inline-start" />
           New palette
         </Button>
+        <AuthControl />
         <ThemeControl />
       </div>
     </div>

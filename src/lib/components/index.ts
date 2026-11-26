@@ -1,3 +1,4 @@
+export { default as AuthControl } from './AuthControl.svelte';
 export { default as ColorPicker } from './ColorPicker.svelte';
 export { default as HarmonySelector } from './HarmonySelector.svelte';
 export { default as ColorSwatch } from './ColorSwatch.svelte';

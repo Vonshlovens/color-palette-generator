@@ -4,12 +4,12 @@ import { toSavedPalette } from '$lib/server/palettes/mapping';
 import { PALETTE_LIST_DEFAULT_LIMIT } from '$lib/server/palettes/validation';
 import type { PageServerLoad } from './$types';
 
-export const load: PageServerLoad = async () => {
+export const load: PageServerLoad = async ({ locals }) => {
   try {
     const { palettes, hasMore } = await listPalettes({
       limit: PALETTE_LIST_DEFAULT_LIMIT,
       offset: 0
-    });
+    }, locals.db);
 
     return {
       palettes: palettes.map(toSavedPalette),

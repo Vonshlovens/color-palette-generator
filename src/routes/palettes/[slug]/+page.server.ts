@@ -5,14 +5,14 @@ import { toSavedPalette } from '$lib/server/palettes/mapping';
 import { paletteSlugSchema } from '$lib/server/palettes/validation';
 import type { PageServerLoad } from './$types';
 
-export const load: PageServerLoad = async ({ params }) => {
+export const load: PageServerLoad = async ({ params, locals }) => {
   if (!paletteSlugSchema.safeParse(params.slug).success) {
     error(404, 'Palette not found');
   }
 
   let record: PaletteRecord | undefined;
   try {
-    record = await getPaletteBySlug(params.slug);
+    record = await getPaletteBySlug(params.slug, locals.db);
   } catch (cause) {
     console.error('Failed to load saved palette', { slug: params.slug, cause });
     error(503, 'Palette service is temporarily unavailable');
