@@ -15,7 +15,7 @@ function createSlug(): string {
 
 export async function createPalette(
   database: Database,
-  input: CreatePaletteInput
+  input: CreatePaletteInput & { createdBy: string }
 ): Promise<PaletteRecord> {
   const now = new Date();
 
@@ -30,6 +30,7 @@ export async function createPalette(
         saturation: input.saturation,
         lightness: input.lightness,
         harmony: input.harmony,
+        createdBy: input.createdBy,
         createdAt: now,
         updatedAt: now
       })

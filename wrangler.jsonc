@@ -7,6 +7,10 @@
 		"binding": "ASSETS",
 		"directory": ".svelte-kit/cloudflare"
 	},
+	// One canonical address: sign-in links and session cookies are tied to BETTER_AUTH_URL.
+	"routes": [{ "pattern": "colors.ericevans.dev", "custom_domain": true }],
+	"workers_dev": false,
+	"preview_urls": false,
 	"observability": {
 		"enabled": true
 	},
@@ -14,12 +18,15 @@
 		{
 			"binding": "DB",
 			"database_name": "color-palette-generator",
-			// Omitted until the remote database exists: local dev and tests need no ID, and
-			// `wrangler deploy` provisions the database and writes the ID back here.
-			// "database_id": "",
+			"database_id": "184f7557-27bf-4bcb-b89e-1534833d1f01",
 			"migrations_dir": "drizzle"
 		}
-	]
-	// The custom domain is attached at cutover (see README "Deploying to Cloudflare"):
-	// "routes": [{ "pattern": "colors.vonshlovens.com", "custom_domain": true }]
+	],
+	// Non-secret settings. Secrets (BETTER_AUTH_SECRET, RESEND_API_KEY) are set with
+	// `wrangler secret put`. `.dev.vars` overrides these for local `wrangler dev`.
+	"vars": {
+		"BETTER_AUTH_URL": "https://colors.ericevans.dev",
+		"AUTH_EMAIL_FROM": "Palette Studio <colors@mail.ericevans.dev>",
+		"OWNER_EMAIL": "eric@ericevans.dev"
+	}
 }

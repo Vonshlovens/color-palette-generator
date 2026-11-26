@@ -1,10 +1,11 @@
 <script lang="ts">
   import { page } from '$app/state';
   import type { Snippet } from 'svelte';
+  import AuthControl from './AuthControl.svelte';
   import ThemeControl from './ThemeControl.svelte';
 
   interface Props {
-    /** Extra page actions shown before the theme control. */
+    /** Extra page actions shown before the account and theme controls. */
     actions?: Snippet;
   }
 
@@ -32,7 +33,8 @@
       >
         <span class="bg-background/90 size-3 rounded-full shadow-inner"></span>
       </span>
-      <span class="font-display text-[1.05rem] font-semibold">Palette Studio</span>
+      <!-- Phones show only the mark so the account and theme controls fit beside it. -->
+      <span class="font-display hidden text-[1.05rem] font-semibold sm:inline">Palette Studio</span>
     </a>
 
     <nav aria-label="Primary" class="segmented hidden sm:inline-flex">
@@ -51,6 +53,7 @@
       >
         {isActive('/palettes') ? 'Studio' : 'Gallery'}
       </a>
+      <AuthControl />
       <ThemeControl />
     </div>
   </div>

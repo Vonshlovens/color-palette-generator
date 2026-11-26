@@ -11,4 +11,4 @@ export function createDb(d1: D1Database) {
 export type Database = ReturnType<typeof createDb>;
 
 export { schema };
-export type { NewPaletteRecord, PaletteRecord } from './schema';
+export type { NewPaletteRecord, PaletteRecord, UserRecord } from './schema';

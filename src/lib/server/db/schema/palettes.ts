@@ -1,6 +1,7 @@
 import { sql } from 'drizzle-orm';
 import { check, index, integer, real, sqliteTable, text, uniqueIndex } from 'drizzle-orm/sqlite-core';
 import { HARMONY_TYPES, type HarmonyType } from '$lib/types';
+import { user } from './auth';
 
 export const palettes = sqliteTable(
   'palettes',
@@ -12,6 +13,7 @@ export const palettes = sqliteTable(
     saturation: real('saturation').notNull(),
     lightness: real('lightness').notNull(),
     harmony: text('harmony', { enum: HARMONY_TYPES }).$type<HarmonyType>().notNull(),
+    createdBy: text('created_by').references(() => user.id, { onDelete: 'set null' }),
     createdAt: integer('created_at', { mode: 'timestamp_ms' })
       .notNull()
       .default(sql`(unixepoch() * 1000)`),

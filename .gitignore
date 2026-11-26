@@ -18,5 +18,7 @@ data/
 .beads-credential-key
 .beads/proxieddb/
 
-# Wrangler local state (local D1 database) and logs
+# Wrangler local state (local D1 database), logs, and local secrets
 .wrangler/
+.dev.vars*
+!.dev.vars.example

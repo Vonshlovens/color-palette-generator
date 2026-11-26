@@ -3,7 +3,7 @@ import type { PaletteRecord } from '$lib/server/db';
 import { toSavedPalette } from './mapping';
 
 describe('toSavedPalette', () => {
-  it('maps database values while omitting the internal ID', () => {
+  it('maps database values while omitting the internal ID and creator', () => {
     const record: PaletteRecord = {
       id: '3d9945b5-9363-43a3-9245-f0a67c5a1062',
       slug: 'Abcdef123456',
@@ -12,6 +12,7 @@ describe('toSavedPalette', () => {
       saturation: 70,
       lightness: 50,
       harmony: 'triadic',
+      createdBy: 'user-1',
       createdAt: new Date('2026-01-02T03:04:05.000Z'),
       updatedAt: new Date('2026-02-03T04:05:06.000Z')
     };

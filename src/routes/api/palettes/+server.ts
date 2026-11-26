@@ -44,6 +44,14 @@ export const GET: RequestHandler = async ({ url, locals }) => {
 };
 
 export const POST: RequestHandler = async ({ request, locals }) => {
+  // Saving is the only public database write; hooks.server.ts sets `user` only for approved users.
+  if (!locals.user) {
+    return json(
+      { error: { code: 'UNAUTHORIZED', message: 'Sign in with an approved account to save palettes' } },
+      { status: 401 }
+    );
+  }
+
   let payload: unknown;
 
   try {
@@ -74,7 +82,9 @@ export const POST: RequestHandler = async ({ request, locals }) => {
   }
 
   try {
-    const palette = toSavedPalette(await createPalette(locals.db, result.data));
+    const palette = toSavedPalette(
+      await createPalette(locals.db, { ...result.data, createdBy: locals.user.id })
+    );
 
     return json(
       { palette },
